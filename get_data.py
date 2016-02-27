@@ -5,7 +5,7 @@
 # @Version : 0.0.0
 # @Style   : Python3.5
 #
-# @Description: 
+# @Description: get and solve the data 
 
 import os
 import csv

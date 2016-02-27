@@ -17,10 +17,12 @@ class info_dict(OrderedDict):
 		return 0
 # load the csv data
 def load_data(file_name, \
-		data_dir = "/home/csjx/languageCode/DevelopArea/WorkAREA/Competition/PPD-First-Round-Data", \
+		data_dir = "PPD-First-Round-Data", \
 		data_style = "Training Set"):
-	data_file_path = os.path.join(data_dir, data_style, file_name)
-	
+
+	path = os.getcwd()
+
+	data_file_path = os.path.join(path, data_dir, data_style, file_name)
 	if os.path.exists(data_file_path):
 		with open(data_file_path, newline='', encoding='gbk') as csv_file:
 			csv_reader = csv.reader(csv_file)
@@ -30,6 +32,7 @@ def load_data(file_name, \
 		data = lines[1:]
 		original_data = lines
 		return features, data, original_data
+
 	return None
 
 def data_info(original_data, data_label = "forTrain"):
@@ -37,7 +40,7 @@ def data_info(original_data, data_label = "forTrain"):
 	info = info_dict()
 	info["data_label"] = data_label
 	info["num_instances"] = len(original_data[1:])
-	info["num_features"] = len(original_data[0][1:])
+	info["num_features"] = len(original_data[0][1:]) # ignore the idx 
 
 	pattern1 = re.compile(r"\d")
 	pattern2 = re.compile(r"\d$")
@@ -58,7 +61,8 @@ def data_info(original_data, data_label = "forTrain"):
 				info["num_" + fea[0:pos]] += 1
 			else:
 				pos = pattern2.search(fea).start()			
-				info["num_" + fea[0:pos]] += 1				
+				info["num_" + fea[0:pos]] += 1	
+	# remove the target from the features			
 	if "num_target" in info:
 		info["num_features"] -= 1
 

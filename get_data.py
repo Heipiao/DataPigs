@@ -73,14 +73,16 @@ def print_instance_format(features, instance_data):
 		print(features[i] + ": " + instance_data[i])
 
 if __name__ == '__main__':
-	#train_master_feas, train_master_data, a = load_data("PPD_Training_Master_GBK_3_1_Training_Set.csv")
-	train_master_feas, train_master_data, a = load_data("PPD_LogInfo_3_1_Training_Set.csv")
+	train_master_feas, train_master_data, a = load_data("PPD_Training_Master_GBK_3_1_Training_Set.csv")
+	#train_master_feas, train_master_data, a = load_data("PPD_LogInfo_3_1_Training_Set.csv")
+	print("***********just view features and one data: ***********")
 	print(train_master_feas)
 	print(train_master_data[0])
 
+	print("*****print correspondence between features and data")
 	print_instance_format(train_master_feas, train_master_data[0])
 
-	print(type(train_master_data))
+	print("\n***** the info of the features *******")
 	info = data_info(a)
 	for k, v in info.items():
 		print(k, v)

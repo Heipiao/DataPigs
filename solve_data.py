@@ -66,15 +66,17 @@ def feature_value_class(data, fea_pos, label):
 	pattern_digit = re.compile(r".*\d.*")
 
 	for i in range(len(data)):
-		if data[i, fea_pos] and not data[i, fea_pos] == "不详":
-			#if data[i, fea_pos] == "b"
-			insert_key = data[i, fea_pos]
-			try:	
-				float(insert_key)
-				if value_class["str_feature"]:
-					value_class["str_feature"] = False
-			except:
-				value_class["str_feature"] = True
+		if data[i, fea_pos]:
+			if data[i, fea_pos] == "不详":
+				insert_key = "miss"
+			else:
+				insert_key = data[i, fea_pos]
+				try:	
+					float(insert_key)
+					if value_class["str_feature"]:
+						value_class["str_feature"] = False
+				except:
+					value_class["str_feature"] = True
 		else:
 			insert_key = "miss"
 
@@ -151,15 +153,17 @@ def label_statistics(label):
 #	- features: all the features 1-dim (a,)
 #	- label: the label of data 2-dims (a, b)
 #	- fea_value_sat: result of function feature_value_class
-def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea, threshold = 5000):
+# ?? how to use this funcion? --> Please see the main.py
+def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, threshold = 5000):
 	if fea_value_sat["miss"]._present_num >= threshold:
 		delete_fea.append(fea_pos)
+		missing_num.append(fea_value_sat["miss"]._present_num)
 		return data
 
 	fill_with = "fuck"
 	# use the average of the same label of missed instances to fill the miss
 	for i in range(len(data)):
-		if not data[i, fea_pos]:
+		if not data[i, fea_pos] or data[i, fea_pos] == "不详":
 			# if this miss data is a string style
 			if fea_value_sat["str_feature"]:
 				if label[i, 0] == 1: # if this missed value instance`s label is 1
@@ -175,13 +179,13 @@ def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea, threshold = 50
 					fill_with = round(fea_value_sat["average_negitive"])
 
 			#print(new_data[i, fea_pos])	
-			data[i, fea_pos] = fill_with
+			data[i, fea_pos] = str(fill_with)
 	return data
 
 # input:
 #	fea_pos: a list contain which features should be delete
 # result:
-#	deleted_features: a list contain the deleted features
+#	deleted_features: a list contain the deleted features` index
 def delete_features(data, features, delete_fea_pos):
 	deleted_features = [features[i] for i in delete_fea_pos]
 
@@ -189,3 +193,68 @@ def delete_features(data, features, delete_fea_pos):
 	features = np.delete(features, delete_fea_pos, axis = 0)
 
 	return data, features, deleted_features
+
+# input:
+#	fea_value_sat: should be the result of the function 'feature_value_class'
+def calculate_feature_entroy(fea_value_sat):
+	from math import log
+	log2 = lambda x : log(x) / log(2)
+
+	pos_entroy = 0.0
+	neg_entroy = 0.0
+	num_pos = fea_value_sat["num_positive"]
+	num_neg = fea_value_sat["num_negitive"]
+	if num_pos == 0 or num_neg == 0:
+		return 0
+
+	num_instances = num_pos + num_neg
+	for k, v in fea_value_sat.items():
+		if isinstance(v, FeatureInData):
+			pro_pos = float(v._respond_positive_num / num_pos)
+			pro_neg = float(v._respond_negitive_num / num_neg)
+			if not pro_pos == 0:
+				pos_entroy = pos_entroy - pro_pos * log2(pro_pos)
+			if not pro_neg == 0:
+				neg_entroy = neg_entroy - pro_neg * log2(pro_neg)
+	fea_entroy =  float(num_pos / num_instances) * pos_entroy + \
+				float(num_neg / num_instances) * neg_entroy
+	fea_entroy = round(fea_entroy, 2)	
+	return fea_entroy
+
+# calculate all the entroy of each feature and sort them in order lower --> bigger
+#	contain all the features` entroy in a dict 
+#		- key: index of the feature
+#		- value: entroy of the respond feature
+def sort_features_with_entroy(data, features, label):
+	index_entroy = dict()
+	for fea_pos in range(1, len(features)):
+		fea_value_sat = feature_value_class(data, fea_pos, label)
+		fea_pos_entroy = calculate_feature_entroy(fea_value_sat)
+		index_entroy[fea_pos] = fea_pos_entroy
+
+	sorted(index_entroy.items(), key=lambda d: d[1])
+	return index_entroy
+# after filling the missing features and remove the most missing contained features
+#	now we remove the features without enough discrimination
+# input:
+#	- index_entroy: the return result of function 'sort_features_with_entroy'
+#	- lower_number_deleted: the number of lowest entroy features you want to delete
+# output:
+#	- the three return just as function 'delete_features'
+#	- a list contain the responding entroy of the deleted features
+def delete_no_discrimination_features(data, features, index_entroy, lower_number_deleted = " "):
+	delete_fea_index = []
+	delete_fea_entroy = []
+	for k, v in index_entroy.items():
+		if not lower_number_deleted == " ":
+			if k <= lower_number_deleted:
+				delete_fea_index.append(k)
+				delete_fea_entroy.append(v)
+		else:
+			if v < 0.09:
+				delete_fea_index.append(k)
+				delete_fea_entroy.append(v)
+	# delete_fea_index = np.array(delete_fea_index)
+	# delete_fea_entroy = np.array(delete_fea_entroy)
+	data, features, deleted_features = delete_features(data, features, delete_fea_index)
+	return data, features, deleted_features, delete_fea_entroy

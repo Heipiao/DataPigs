@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Date    : 2016-02-28 15:49:28
+# @Author  : chensijia (2350543676@qq.com)
+# @Version : 0.0.0
+# @Style   : Python3.5
+#
+# @Description: 
+
+import numpy as np
+import csv
+import os
+from save_load_result import save_result
+
+
+# data = np.array([['E','F','C',4,5], [6,7,'D','9',6], [2,3,'C',5,6], [3,8,'D',3,3], [2,2,'',5,6]])
+# fea = np.array([1, 2, '3', 4, 5])
+# label = np.array([['1'], ['0'], ['0'], ['1'], ['1']])
+
+# save_result(data, "firstTry.csv")
+
+my_data = ['asdf', 'sdf', 'asdf', '1', '6']
+ll = dict()
+ll["ok"] = 5
+ll["okokok"] = 6
+my_data.append(ll)
+
+with open("test_svae_list.csv", "w", newline='') as csv_file:
+	spamwriter = csv.writer(csv_file)
+	spamwriter.writerow(my_data)

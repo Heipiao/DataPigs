@@ -7,21 +7,22 @@
 #
 # @Description: solve the data
 
-
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import re
 import numpy as np
 
-# the input should be a array style
+# the input should be a array style whose shape is (a, b)
 def convert_to_digit(data):
+	row, col = data.shape
+	new_data = np.ones(data.shape, dtype=np.int64)
+
 	# conver the digit number str to number
-	for i in range(len(data)):
-		for j in range(len(features)):
-			try:
-				data[i, j] = round(float(data[i][j]))
-			except :
-				pass
-	return data
+	for i in range(row):
+		for j in range(col):
+			new_data[i, j] = int(float(data[i, j]))
+
+	return new_data
+
 
 # each of the instance of this class respond to a value of the feature
 #	the value of the feature is the key of value_class (see function feature_value_class)
@@ -67,6 +68,9 @@ def feature_value_class(data, fea_pos, label):
 
 	for i in range(len(data)):
 		if data[i, fea_pos]:
+			# finally i think we can not solve '不详'
+			#	so i add the replace the col contain '不详'
+			#	with the original one
 			if data[i, fea_pos] == "不详":
 				insert_key = "miss"
 			else:
@@ -154,7 +158,7 @@ def label_statistics(label):
 #	- label: the label of data 2-dims (a, b)
 #	- fea_value_sat: result of function feature_value_class
 # ?? how to use this funcion? --> Please see the main.py
-def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, threshold = 5000):
+def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, threshold = 10000):
 	if fea_value_sat["miss"]._present_num >= threshold:
 		delete_fea.append(fea_pos)
 		missing_num.append(fea_value_sat["miss"]._present_num)
@@ -183,11 +187,21 @@ def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, th
 	return data
 
 # input:
-#	fea_pos: a list contain which features should be delete
+#	delete_fea_pos: a list contain which features should be delete
+#	delete_feas_list: a default para contain the name of features you want to remove
 # result:
 #	deleted_features: a list contain the deleted features` index
-def delete_features(data, features, delete_fea_pos):
-	deleted_features = [features[i] for i in delete_fea_pos]
+def delete_features(data, features, delete_fea_pos = " ", delete_feas_list = " "):
+	if not delete_fea_pos == " ":
+		deleted_features = [features[i] for i in delete_fea_pos]
+
+	if not delete_feas_list == " ":
+		deleted_features = delete_feas_list
+		delete_fea_pos = list()
+		for f in delete_feas_list:
+			fea_pos = np.where(features == f)[0][0]
+			delete_fea_pos.append(fea_pos)
+
 
 	data = np.delete(data, delete_fea_pos, axis = 1)
 	features = np.delete(features, delete_fea_pos, axis = 0)
@@ -200,13 +214,13 @@ def calculate_feature_entroy(fea_value_sat):
 	from math import log
 	log2 = lambda x : log(x) / log(2)
 
-	pos_entroy = 0.0
-	neg_entroy = 0.0
+
 	num_pos = fea_value_sat["num_positive"]
 	num_neg = fea_value_sat["num_negitive"]
 	if num_pos == 0 or num_neg == 0:
 		return 0
-
+	pos_entroy = 0.0
+	neg_entroy = 0.0
 	num_instances = num_pos + num_neg
 	for k, v in fea_value_sat.items():
 		if isinstance(v, FeatureInData):
@@ -216,6 +230,7 @@ def calculate_feature_entroy(fea_value_sat):
 				pos_entroy = pos_entroy - pro_pos * log2(pro_pos)
 			if not pro_neg == 0:
 				neg_entroy = neg_entroy - pro_neg * log2(pro_neg)
+
 	fea_entroy =  float(num_pos / num_instances) * pos_entroy + \
 				float(num_neg / num_instances) * neg_entroy
 	fea_entroy = round(fea_entroy, 2)	
@@ -232,8 +247,11 @@ def sort_features_with_entroy(data, features, label):
 		fea_pos_entroy = calculate_feature_entroy(fea_value_sat)
 		index_entroy[fea_pos] = fea_pos_entroy
 
-	sorted(index_entroy.items(), key=lambda d: d[1])
-	return index_entroy
+	temp = sorted(index_entroy.items(), key=lambda d: d[1])
+	sorted_index_entroy = OrderedDict()
+	for i in range(len(temp)):
+		sorted_index_entroy[temp[i][0]] = temp[i][1]
+	return sorted_index_entroy
 # after filling the missing features and remove the most missing contained features
 #	now we remove the features without enough discrimination
 # input:
@@ -245,16 +263,20 @@ def sort_features_with_entroy(data, features, label):
 def delete_no_discrimination_features(data, features, index_entroy, lower_number_deleted = " "):
 	delete_fea_index = []
 	delete_fea_entroy = []
+	number = 0
 	for k, v in index_entroy.items():
 		if not lower_number_deleted == " ":
-			if k <= lower_number_deleted:
+			if number <= lower_number_deleted:
 				delete_fea_index.append(k)
 				delete_fea_entroy.append(v)
+				number += 1
 		else:
-			if v < 0.09:
+			if v <= 0.09:
 				delete_fea_index.append(k)
 				delete_fea_entroy.append(v)
 	# delete_fea_index = np.array(delete_fea_index)
 	# delete_fea_entroy = np.array(delete_fea_entroy)
 	data, features, deleted_features = delete_features(data, features, delete_fea_index)
 	return data, features, deleted_features, delete_fea_entroy
+
+

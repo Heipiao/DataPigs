@@ -12,17 +12,17 @@ import numpy as np
 from solve_data import calculate_feature_entroy, feature_value_class, FeatureInData, sort_features_with_entroy
 
 
-data = np.array([[1,2,3,4,5],
-				[1,2,4,5,3],
-				[2,2,4,5,3],
-				[3,2,4,5,1],
-				[1,2,3,4,5]])
-features = np.array([1, 2, 3, 4, 5])
-label = np.array([[1],
-				[1],
+data = np.array([[1,3,2,4,5],
+				[1,4,2,5,3],
+				[2,4,2,5,3],
+				[3,4,2,5,1],
+				[1,3,2,4,5]])
+features = np.array([4, 1, 4, 3, 1])
+label = np.array([[0],
 				[0],
 				[1],
-				[0]])
+				[0],
+				[1]])
 
 # fea_value_sat = feature_value_class(data, 2, label)
 # for k, v in fea_value_sat.items():
@@ -35,9 +35,17 @@ label = np.array([[1],
 # result = calculate_feature_entroy(fea_value_sat)
 # print(result)
 result_entroy = sort_features_with_entroy(data, features, label)
-print(result_entroy)
-
 for k, v in result_entroy.items():
 	print(k, v)
 
-print(round(0.05, 1))
+ll = ""
+if ll:
+	print("dsffffffff")
+# ll = sorted(result_entroy.items(), key=lambda d: d[1])
+# print(ll)
+# print(len(ll))
+# print(type(ll))
+# print(type(ll[0][0]))
+# print(ll[0][0])
+# print(round(0.05, 1))
+

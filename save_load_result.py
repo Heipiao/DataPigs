@@ -87,15 +87,25 @@ def save_features_info(data, features, label, file_name, dir_name = "resultData"
 
 
 
-# load the data and features
+# load the data from the file_name
+#	the return will be a list which contains data [[], [], [], ...]
+#	for example1: 
+	# contents = load_result("data_after_delete__no_discrimination_features.csv")
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
+#	for example2:	
+	# label_lines = np.array(load_result("train_label_original.csv"))
+	# from save_load_result import convert_to_float
+	# label = convert_to_float(label_lines)
 def load_result(file_name, dir_name = "resultData"):
 	data_file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	if os.path.exists(data_file_path):
 		with open(data_file_path, newline='') as csv_file:
 			csv_reader = csv.reader(csv_file)
 			lines = [line for line in csv_reader]
-	return lines
-
+			return lines
+	else:
+		print("No such file !!!")
 # note: if you want to get the label data as a float type please call this function
 #	-- the input: should be array types with size (row, 1)
 def convert_to_float(strf_array):

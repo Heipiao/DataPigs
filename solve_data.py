@@ -47,6 +47,10 @@ class FeatureInData(object):
 
 
 # the input data should without first line as features` des
+#	fea_pos --> not contain 0, because this respond features is Id
+#	fixed_str_features_index --> a list contain the index of str style features
+#		why use this ? because even if the str style features are digited, 
+#			we really should solve these features as str
 # the result of this function :
 #	1. contain "str_feature" show whether this is a string feature
 #		<2, 3> ignore the missing feature instances
@@ -59,7 +63,7 @@ class FeatureInData(object):
 #	4. contain "num_positive" show how many positives instances contains except the feature is missed
 #	5. contain "num_negitive" show how many negitive instances contains
 #	6. contain class FeatureInData`s instances whose key is their feature value
-def feature_value_class(data, fea_pos, label):
+def feature_value_class(data, fea_pos, label, fixed_str_features_index = " "):
 	value_class = defaultdict(FeatureInData)
 	# whether this feature is a string style feature
 	value_class["str_feature"] = True
@@ -81,6 +85,9 @@ def feature_value_class(data, fea_pos, label):
 						value_class["str_feature"] = False
 				except:
 					value_class["str_feature"] = True
+				if not fixed_str_features_index == " ":
+					if fea_pos in fixed_str_features_index:
+						value_class["str_feature"] = True
 		else:
 			insert_key = "miss"
 
@@ -125,8 +132,8 @@ def feature_value_class(data, fea_pos, label):
 				sum_pos += float(k) * v._respond_positive_num
 				sum_neg += float(k) * v._respond_negitive_num
 	if not value_class["str_feature"]:
-		value_class["average_positive"] = sum_pos / num_pos
-		value_class["average_negitive"] = sum_neg / num_neg
+		value_class["average_positive"] = round(sum_pos / num_pos, 3)
+		value_class["average_negitive"] = round(sum_neg / num_neg, 3)
 	else:
 		value_class["most_presentS_positive"] = most_presentS_positive
 		value_class["most_presentS_negitive"] = most_presentS_negitive

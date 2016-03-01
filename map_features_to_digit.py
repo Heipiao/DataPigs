@@ -378,18 +378,30 @@ if __name__ == '__main__':
 
 
 	################### map the str to digit ##################
-	contents = load_result("digited_residence_data.csv")
-	# remove the feature named 'ListingInfo' 
+	# contents = load_result("digited_residence_data.csv")
+	# # remove the feature named 'ListingInfo' 
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
+
+	# delete_fea_pos = ["ListingInfo"]
+	# data, features, deleted_features = delete_features(data, features, delete_feas_list = delete_fea_pos)
+
+	# label_lines = np.array(load_result("train_label_original.csv"))
+	# from save_load_result import convert_to_float
+	# label = convert_to_float(label_lines)
+	# digited_data, features_map_info = map_str_to_digit(data, features, label)
+
+	# save_result(digited_data, "after_solve_specialStr_digited_data.csv", features)
+	# save_result(np.array(features_map_info), "solve_specialStr_features_map_infos.csv", dir_name = "resultData/features_map")
+	
+	################# after all this, save the features info to the file ##########
+	contents = load_result("after_solve_specialStr_digited_data.csv")
 	features = np.array(contents[0])
 	data = np.array(contents[1:])
 
-	delete_fea_pos = ["ListingInfo"]
-	data, features, deleted_features = delete_features(data, features, delete_feas_list = delete_fea_pos)
-
 	label_lines = np.array(load_result("train_label_original.csv"))
-	from save_load_result import convert_to_float
-	label = convert_to_float(label_lines)
-	digited_data, features_map_info = map_str_to_digit(data, features, label)
 
-	save_result(digited_data, "after_solve_specialStr_digited_data.csv", features)
-	save_result(np.array(features_map_info), "solve_specialStr_features_map_infos.csv", dir_name = "resultData/features_map")
+	from save_load_result import convert_to_float, save_features_info
+	label = convert_to_float(label_lines)
+
+	save_features_info(data, features, label, "after_solve_specialStr_features_infos.csv")

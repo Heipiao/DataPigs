@@ -54,6 +54,14 @@ def save_features_info(data, features, label, file_name, dir_name = "resultData"
 						'num_positive', \
 						'num_negitive', 'feature_value_info'])
 
+	fixed_str_features = np.array(load_result("str_features.csv")[0])
+	indexs = list()
+	for i in range(len(fixed_str_features)):
+		try:
+			finded = np.where(features == fixed_str_features[i])[0][0]
+			indexs.append(finded)
+		except:
+			pass
 	with open(file_path, "w", newline='') as csv_file:
 		spamwriter = csv.writer(csv_file)
 		spamwriter.writerow(first_line)
@@ -63,7 +71,7 @@ def save_features_info(data, features, label, file_name, dir_name = "resultData"
 	for fea_pos in range(1, len(features)):
 		feature_info = list()
 		feature_info.append(features[fea_pos])	
-		fea_val_cla = feature_value_class(data, fea_pos, label)
+		fea_val_cla = feature_value_class(data, fea_pos, label, fixed_str_features_index = indexs)
 		feature_info.append(fea_val_cla["str_feature"])
 		if fea_val_cla["str_feature"]:
 			feature_info.append(fea_val_cla["most_presentS_positive"])

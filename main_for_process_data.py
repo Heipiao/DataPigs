@@ -86,8 +86,6 @@ def filling_miss(data, features, label = "", for_train = True, fill_with_experie
 		save_result(np.array(missing_num), "deleted_features_with_too_many_missing.csv", np.array(deleted_feas))
 		write_to_deleted_features_area(np.array(deleted_feas))
 
-		save_result(new_data, "data_after_filling_missing.csv", new_features)
-
 	else:
 		if fill_with_experience:
 			for fea_pos in range(1, len(features)):
@@ -99,7 +97,6 @@ def filling_miss(data, features, label = "", for_train = True, fill_with_experie
 					new_data = filling_miss_with_current_set(new_data, fea_pos, fea_val_cla, label, \
 														delete_fea, missing_num)
 
-	save_result(new_data, "data_after_filling_missing.csv", new_features)
 	return new_data, new_features
 
 # this step is just for training!!!
@@ -129,12 +126,12 @@ def remove_no_discrimination(data, features, label):
 #	normal str style features --> map just as their value
 
 def strStyle_features_to_digit(data, features):
-	str_style_features = np.array(load_result("str_features.csv")[0])
-	city_features = ["UserInfo_2", "UserInfo_4", "UserInfo_7", "UserInfo_19"]
-	privince_features = ["UserInfo_6", "UserInfo_18"]
-	phone_features = ["UserInfo_8"]
-	marry_features = ["UserInfo_21"]
-	resident_features = ["UserInfo_23"]
+
+	city_features = ["UserInfo_2", "UserInfo_4", "UserInfo_8", "UserInfo_20"]
+	privince_features = ["UserInfo_7", "UserInfo_19"]
+	phone_features = ["UserInfo_9"]
+	marry_features = ["UserInfo_22"]
+	resident_features = ["UserInfo_24"]
 
 	digited_special_str_features = list()
 
@@ -173,8 +170,8 @@ def strStyle_features_to_digit(data, features):
 
 if __name__ == '__main__':
 	################# step1: load the original data ###################
-	# "PPD_Training_Master_GBK_3_1_Training_Set.csv"
-	# data, features, label = load_data_for_solve("PPD_Training_Master_GBK_3_1_Training_Set.csv")
+	#"PPD_Training_Master_GBK_3_1_Training_Set.csv"
+	data, features, label = load_data_for_solve("PPD_Training_Master_GBK_3_1_Training_Set.csv")
 	# # print(features.shape)
 	# # print(data.shape)
 	# # print(label.shape)
@@ -182,20 +179,22 @@ if __name__ == '__main__':
 	# # print(data[:3])
 	# # print(label)
 	# ################## step2: filling_miss ##################
-	# data, features = filling_miss(data, features, label)
+	data, features = filling_miss(data, features, label)
+	save_result(data, "data_after_filling_missing.csv", features)
 	# save_features_info(data, features, label, "after_filling_features_info.csv")
 	# ################ for train --> find and remove no discrimination features ##########
-	# data, features = remove_no_discrimination(data, features, label)
+	data, features = remove_no_discrimination(data, features, label)
 
 	# ################ map some special features to digit
-	# # contents = load_result("data_after_delete_no_discrimination_features.csv")
-	# # features = np.array(contents[0])
-	# # data = np.array(contents[1:])
-	# # label_lines = np.array(load_result("train_label_original.csv"))
-	# # from save_load_result import convert_to_float
-	# # label = convert_to_float(label_lines)
-	# data = strStyle_features_to_digit(data, features)
-
+	# contents = load_result("after_Str_features_digited_data.csv")
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
+	# label_lines = np.array(load_result("train_label_original.csv"))
+	# print(label_lines.shape)
+	# from save_load_result import convert_to_float
+	# label = convert_to_float(label_lines)
+	data = strStyle_features_to_digit(data, features)
+	save_features_info(data, features, label, "after_digit_all_features_info.csv")
 	# print(features)
 	# print(data[:3])
 

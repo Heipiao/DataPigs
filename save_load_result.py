@@ -14,6 +14,9 @@ with open('eggs.csv', 'w', newline='') as csvfile:
     spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
     spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 '''
+
+DIR_NAME = "resultData"
+
 from solve_data import get_known_features_index
 import os
 import csv
@@ -21,7 +24,7 @@ import collections
 import numpy as np
 # all the input should be array 
 # save the data as csv in SAVE_LOAD_AREA/file_name
-def save_result(data, file_name, features = 10, dir_name = "test_test"):
+def save_result(data, file_name, features = 10, dir_name = DIR_NAME):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	with open(file_path, "w", newline='') as csv_file:
@@ -45,7 +48,7 @@ def save_result(data, file_name, features = 10, dir_name = "test_test"):
 #	- _present_num
 #	- _respond_positive_num
 #	- _respond_negitive_num
-def save_features_info(data, features, label, file_name, dir_name = "test_test"):
+def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	first_line = np.array(['features_name', 'str_feature', \
@@ -125,7 +128,7 @@ def save_features_info(data, features, label, file_name, dir_name = "test_test")
 	# label_lines = np.array(load_result("train_label_original.csv"))
 	# from save_load_result import convert_to_float
 	# label = convert_to_float(label_lines)
-def load_result(file_name, dir_name = "test_test"):
+def load_result(file_name, dir_name = DIR_NAME):
 	data_file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	if os.path.exists(data_file_path):
 		with open(data_file_path, newline='') as csv_file:
@@ -154,7 +157,7 @@ def convert_to_float(strf_array):
 #		convert_to_array = np.array(load_result("all_deleted_features.csv"))
 #		the_style_we_want = convert_to_array.shape((convert_to_array.size,))
 def write_to_deleted_features_area(features, file_name = "all_deleted_features.csv", \
-						dir_name = "resultData", re_write = False):
+						dir_name = DIR_NAME, re_write = False):
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	style = "a+"
 	if re_write: 

@@ -274,11 +274,16 @@ def convert_to_numerical(data, features):
 def map_str_to_digit(data, features, no_map_features, label = " "):
 	no_map_features_index = get_known_features_index(features, no_map_features)
 	features_map_info = list()
+
+	fixed_str_features = np.array(load_result("str_features.csv"))[0]
+	fixed_str_features_index = get_known_features_index(features, fixed_str_features)
+
+
 	for fea_pos in range(1, len(features)):
 		if not fea_pos in no_map_features_index:
 			map_info = OrderedDict()
 			feature_map_info = OrderedDict()
-			fea_val_cla = feature_value_class(data, fea_pos, label)
+			fea_val_cla = feature_value_class(data, fea_pos, label, fixed_str_features_index)
 			# if this feature is a string value, just convert it to value
 			if fea_val_cla["str_feature"]:
 				data, map_info = map_str_feature_to_value(data, fea_pos, fea_val_cla)

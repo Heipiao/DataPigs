@@ -67,13 +67,12 @@ def feature_value_class(data, fea_pos, label, fixed_str_features_index = " "):
 	value_class = defaultdict(FeatureInData)
 	# whether this feature is a string style feature
 	value_class["str_feature"] = True
-
 	for i in range(len(data)):
 		if data[i, fea_pos]:
 			# finally i think we can not solve '不详'
 			#	so i add the replace the col contain '不详'
 			#	with the original one
-			if data[i, fea_pos] == "不详":
+			if data[i, fea_pos] == "不详" or data[i, fea_pos] == "-1":
 				insert_key = "miss"
 			else:
 				insert_key = data[i, fea_pos]
@@ -207,7 +206,7 @@ def filling_miss_with_current_set(data, fea_pos, fea_value_sat, label,delete_fea
 	# if label has: 
 	# use the average of the same label of missed instances to fill the miss
 	for i in range(len(data)):
-		if not data[i, fea_pos] or data[i, fea_pos] == "不详":
+		if not data[i, fea_pos] or data[i, fea_pos] == "不详" or data[i, fea_pos] == "-1":
 			# if this miss data is a string style
 			if fea_value_sat["str_feature"]:
 				fill_with = fea_value_sat["most_presentS"]
@@ -244,7 +243,7 @@ def filling_miss_with_experience(data, features, fea_pos):
 
 	fill_with = experient_features_data[which_row, which_col]
 	for i in range(len(data)):
-		if not data[i, fea_pos] or data[i, fea_pos] == "不详":
+		if not data[i, fea_pos] or data[i, fea_pos] == "不详" or data[i, fea_pos] == "-1":
 			data[i, fea_pos] = fill_with
 	return data
 
@@ -358,3 +357,10 @@ def get_known_features_index(features, known_features):
 		except:
 			pass
 	return contain_respond_features_index
+
+
+
+# this function is aim to extract the instances with too many missing...
+#### want to use these person who have lots of missing information to
+#### create a module to description these person who are lack of information
+

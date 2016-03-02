@@ -8,10 +8,11 @@
 # @Description: used the features to digit value for easy to solve in the future
 
 from save_load_result import save_result, load_result
-from solve_data import feature_value_class, FeatureInData, convert_to_digit, \
+from solve_data import feature_value_class, FeatureInData, \
 						delete_features
 import numpy as np
 from collections import OrderedDict
+from solve_data import get_known_features_index
 # replace the features with the original_data
 # input:
 #	data: the data you want to replaced
@@ -27,7 +28,7 @@ def replace_with_original(data, features, replace_features):
 			index = np.where(features == fea)[0][0]	
 			data[:, index] = original_data[:, original_index]
 		except:
-			print(str(fea) + "may not existed")
+			print(str(fea) + "may not existed in input features")
 	return data
 # so digit the city name to value 
 #	the basis idea is according to the cei record of each cities:
@@ -212,8 +213,6 @@ def use_map_basis_to_digit(data, features, map_basis, map_features):
 		for k in map_basis.keys():
 			if x in k:
 				return map_basis[k]
-		# not find in keys
-		print(x)
 		return map_basis["noMatch"]
 	# print(map_to(data[0, 2]))
 	for fea_index in contain_respond_features_index:
@@ -240,6 +239,19 @@ def map_str_feature_to_value(data, fea_pos, fea_value_sat):
 
 	return data, map_info
 
+
+# the input should be a array style whose shape is (a, b)
+def convert_to_numerical(data, features):
+	row, col = data.shape
+	new_data = np.ones(data.shape, dtype=np.int64)
+	num_col = len(features)
+	# conver the digit number str to number
+	for i in range(row):
+		for j in range(num_col):
+			new_data[i, j] = int(float(data[i, j]))
+
+	return new_data
+
 # map all the str style features into int value
 # Please use the sentence below to load the input for this function:
 #	# contents = load_result("data_after_delete__no_discrimination_features.csv")
@@ -251,30 +263,109 @@ def map_str_feature_to_value(data, fea_pos, fea_value_sat):
 # output:
 #	digit_data: the digit data for the origin
 #	features_map_info: how to map the str features is stored in this para..
+#		each of its element is a OrderDict() whose key is the feature`s name,
+#		value is also a OrderDict()
+
 # note: use sentence below to save the result
 	# save_result(digit_data, "after_delete_get_digit_data.csv", features)
 	# save_result(np.array(features_map_info), "features_map_infos.csv", dir_name = "resultData/features_map")
-
-def map_str_to_digit(data, features, label):
-
+# input:
+#	- no_map_features: contain the name of features you do not want to digit 
+def map_str_to_digit(data, features, no_map_features, label = " "):
+	no_map_features_index = get_known_features_index(features, no_map_features)
 	features_map_info = list()
 	for fea_pos in range(1, len(features)):
-		map_info = OrderedDict()
-		feature_map_info = OrderedDict()
-		fea_val_cla = feature_value_class(data, fea_pos, label)
-		# if this feature is a string value, just convert it to value
-		if fea_val_cla["str_feature"]:
-			data, map_info = map_str_feature_to_value(data, fea_pos, fea_val_cla)
-			feature_map_info[features[fea_pos]] = map_info
-			features_map_info.append([feature_map_info])
+		if not fea_pos in no_map_features_index:
+			map_info = OrderedDict()
+			feature_map_info = OrderedDict()
+			fea_val_cla = feature_value_class(data, fea_pos, label)
+			# if this feature is a string value, just convert it to value
+			if fea_val_cla["str_feature"]:
+				data, map_info = map_str_feature_to_value(data, fea_pos, fea_val_cla)
+				feature_map_info[features[fea_pos]] = map_info
+				features_map_info.append([feature_map_info])
 
-	digit_data = convert_to_digit(data)
+	digit_data = convert_to_numerical(data, features)
 	return digit_data, features_map_info
+
+
+
+
+# map the city features into digit
+# input: 
+#	- city_features --> the contain city`s features name 
+#	the use_original_features para is just decided whether to use the data before filling or not
+#	- use_original_features --> default False -- use the map the data contain in the input data
+#								- True -- map the original data and store in the input data
+
+def digit_city_features(data, features, city_features, use_original_features = False):
+	# get the map basis
+	cei_record_content = load_result("2013中国直辖市 省会城市和计划单列市排名榜.csv", dir_name = "material_data")
+	cei_features = np.array(cei_record_content[0])
+	cei_recored_data1 = np.array(cei_record_content[1:])
+
+	cei_record_content = load_result("2013中国城市商业信用环境指数地级市排名榜.csv", dir_name = "material_data")
+	cei_recored_data2 = np.array(cei_record_content[1:])
+	cei_recored_data = np.concatenate((cei_recored_data1, cei_recored_data2))
+	# create the map basis
+	city_map_basis = create_city_map_basis(cei_recored_data, cei_features)
+
+	if use_original_features:
+		data = replace_with_original(data, features, city_features)
+	digited_city_data = use_map_basis_to_digit(data, features, city_map_basis, city_features)
+
+
+
+	return digited_city_data
+
+
+def digit_province_features(data, features, province_features, use_original_features = False):
+	province_content = load_result("2014中国各省人均可支配收入排行.csv", dir_name = "material_data")
+	province_info = np.array(province_content[0])
+	province_data = np.array(province_content[1:])
+
+	province_map_basis = create_province_map_basis(province_data, province_info)
+	if use_original_features:
+		data = replace_with_original(data, features, province_features)
+
+	digited_province_data = use_map_basis_to_digit(data, features, province_map_basis, province_features)
+
+
+	return digited_province_data
+
+def digit_phone_features(data, features, phone_features, use_original_features = False):
+
+	if use_original_features:
+		data = replace_with_original(data, features, phone_features)
+
+	phone_map_basis = create_phone_map_basis()
+	digited_phone_data = use_map_basis_to_digit(data, features, phone_map_basis, phone_features)
+
+
+	return digited_phone_data
+
+def digit_marry_features(data, features, marry_features, use_original_features = False):
+	if use_original_features:
+		data = replace_with_original(data, features, marry_features)
+
+	marrage_map_basis = create_marrage_map_basis()
+	digited_marrage_data = use_map_basis_to_digit(data, features, marrage_map_basis, marry_features)
+
+
+	return digited_marrage_data
+
+def digit_resident_features(data, features, resident_features, use_original_features = False):
+
+	if use_original_features:
+		data = replace_with_original(data, features, resident_features)
+	digited_residence_data = map_residence(data, features, resident_features)
+
+	return digited_residence_data
 
 
 if __name__ == '__main__':
 	###################### used to digit city features ##################################
-	########### features: UserInfo_2", "UserInfo_4", "UserInfo_7"
+	########### features: UserInfo_2", "UserInfo_4", "UserInfo_7", "UserInfo_19"
 	# cei_record_content = load_result("2013中国直辖市 省会城市和计划单列市排名榜.csv", dir_name = "material_data")
 	# cei_features = np.array(cei_record_content[0])
 	# cei_recored_data1 = np.array(cei_record_content[1:])

@@ -11,17 +11,7 @@ from collections import defaultdict, OrderedDict
 import re
 import numpy as np
 
-# the input should be a array style whose shape is (a, b)
-def convert_to_digit(data):
-	row, col = data.shape
-	new_data = np.ones(data.shape, dtype=np.int64)
 
-	# conver the digit number str to number
-	for i in range(row):
-		for j in range(col):
-			new_data[i, j] = int(float(data[i, j]))
-
-	return new_data
 
 
 # each of the instance of this class respond to a value of the feature
@@ -51,6 +41,16 @@ class FeatureInData(object):
 #	fixed_str_features_index --> a list contain the index of str style features
 #		why use this ? because even if the str style features are digited, 
 #			we really should solve these features as str
+#	you should use the sentence below to get the fixed_str_features_index:
+		# 	fixed_str_features = np.array(load_result("str_features.csv")[0])
+		#	indexs = list()
+		#	for i in range(len(fixed_str_features)):
+		#	try:
+		#		finded = np.where(features == fixed_str_features[i])[0][0]
+		#		indexs.append(finded)
+		#	except:
+		#		pass
+		#	fixed_str_features_index = indexs
 # the result of this function :
 #	1. contain "str_feature" show whether this is a string feature
 #		<2, 3> ignore the missing feature instances
@@ -67,8 +67,6 @@ def feature_value_class(data, fea_pos, label, fixed_str_features_index = " "):
 	value_class = defaultdict(FeatureInData)
 	# whether this feature is a string style feature
 	value_class["str_feature"] = True
-
-	pattern_digit = re.compile(r".*\d.*")
 
 	for i in range(len(data)):
 		if data[i, fea_pos]:
@@ -92,53 +90,84 @@ def feature_value_class(data, fea_pos, label, fixed_str_features_index = " "):
 			insert_key = "miss"
 
 		value_class[insert_key].present()
-		if label[i, 0] == 1:
-			value_class[insert_key].positive()
-		else:
-			value_class[insert_key].negitive()
-
-	# for k,v in value_class.items():
-		
-	# 	if isinstance(v, FeatureInData):
-	# 		print(k)
-	# 		v.show()
-	# 	else:
-	# 		print("\n total: ")
-	# 		print(k, v)
+		try:
+			if label[i, 0] == 1:
+				value_class[insert_key].positive()
+			else:
+				value_class[insert_key].negitive()
+		except:
+			pass
 
 	max_pre_str_pos = 0
 	max_pre_str_neg = 0
+	max_pre_str = 0
 	num_pos = 0.0
 	num_neg = 0.0
 	sum_pos = 0.0
 	sum_neg = 0.0
+	total_sum = 0.0
 	most_presentS_positive = "None"
 	most_presentS_negitive = "None"
+	most_presentS = "None"
 	for k, v in value_class.items():
 		#this is a string style feature
 		if isinstance(v, FeatureInData):
-			num_pos += v._respond_positive_num
-			num_neg += v._respond_negitive_num
+			try:
+				l = label[0, 0]
+				num_pos += v._respond_positive_num
+				num_neg += v._respond_negitive_num
+			except:
+				pass
 			if k == "miss":
 				continue
 			if value_class["str_feature"]:
-				if v._respond_positive_num >= max_pre_str_pos:
-					most_presentS_positive = k
-					max_pre_str_pos = v._respond_positive_num
-				if v._respond_negitive_num >= max_pre_str_neg:
-					most_presentS_negitive = k
-					max_pre_str_neg = v._respond_negitive_num
+				# get the most present str value
+				if v._present_num >= max_pre_str:
+					max_pre_str = v._present_num
+					most_presentS = k
+				# if we have label, get more imformation
+				try:
+					l = label[0, 0]
+					if v._respond_positive_num >= max_pre_str_pos:
+						most_presentS_positive = k
+						max_pre_str_pos = v._respond_positive_num
+					if v._respond_negitive_num >= max_pre_str_neg:
+						most_presentS_negitive = k
+						max_pre_str_neg = v._respond_negitive_num
+				except:
+					pass
 			else:
-				sum_pos += float(k) * v._respond_positive_num
-				sum_neg += float(k) * v._respond_negitive_num
+				total_sum += float(k) * v._present_num
+				try:
+					l = label[0, 0]
+					sum_pos += float(k) * v._respond_positive_num
+					sum_neg += float(k) * v._respond_negitive_num
+				except:
+					pass
+
 	if not value_class["str_feature"]:
-		value_class["average_positive"] = round(sum_pos / num_pos, 3)
-		value_class["average_negitive"] = round(sum_neg / num_neg, 3)
+		value_class["average"] = round(total_sum / len(data))
+		try:
+			l = label[0, 0]
+			value_class["average_positive"] = round(sum_pos / num_pos, 3)
+			value_class["average_negitive"] = round(sum_neg / num_neg, 3)
+		except:
+			pass
 	else:
-		value_class["most_presentS_positive"] = most_presentS_positive
-		value_class["most_presentS_negitive"] = most_presentS_negitive
-	value_class["num_positive"] = num_pos
-	value_class["num_negitive"] = num_neg
+		value_class["most_presentS"] = most_presentS
+		try:
+			l = label[0, 0]
+			value_class["most_presentS_positive"] = most_presentS_positive
+			value_class["most_presentS_negitive"] = most_presentS_negitive
+		except:
+			pass
+	try:
+		l = label[0, 0]
+		value_class["num_positive"] = num_pos
+		value_class["num_negitive"] = num_neg
+	except:
+		pass
+
 	return value_class
 
 def label_statistics(label):
@@ -165,32 +194,58 @@ def label_statistics(label):
 #	- label: the label of data 2-dims (a, b)
 #	- fea_value_sat: result of function feature_value_class
 # ?? how to use this funcion? --> Please see the main.py
-def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, threshold = 10000):
-	if fea_value_sat["miss"]._present_num >= threshold:
-		delete_fea.append(fea_pos)
-		missing_num.append(fea_value_sat["miss"]._present_num)
-		return data
-
+def filling_miss_with_current_set(data, fea_pos, fea_value_sat, label,delete_fea, missing_num, threshold = 10000):
+	try:
+		l = label[0, 0]
+		if fea_value_sat["miss"]._present_num >= threshold:
+			delete_fea.append(fea_pos)
+			missing_num.append(fea_value_sat["miss"]._present_num)
+			return data
+	except:
+		pass
 	fill_with = "fuck"
+	# if label has: 
 	# use the average of the same label of missed instances to fill the miss
 	for i in range(len(data)):
 		if not data[i, fea_pos] or data[i, fea_pos] == "不详":
 			# if this miss data is a string style
 			if fea_value_sat["str_feature"]:
-				if label[i, 0] == 1: # if this missed value instance`s label is 1
-					fill_with = fea_value_sat["most_presentS_positive"]
-				else:
-					fill_with = fea_value_sat["most_presentS_negitive"]
-				
+				fill_with = fea_value_sat["most_presentS"]
+				try:
+					if label[i, 0] == 1: # if this missed value instance`s label is 1
+						fill_with = fea_value_sat["most_presentS_positive"]
+					else:
+						fill_with = fea_value_sat["most_presentS_negitive"]
+				except:
+					pass		
 			else:		
-				# fill the miss with average of same label
-				if label[i, 0] == 1:
-					fill_with = round(fea_value_sat["average_positive"])
-				else:
-					fill_with = round(fea_value_sat["average_negitive"])
-
+				fill_with = fea_value_sat["average"]
+				# fill the miss with average of same label, if label has
+				try:
+					if label[i, 0] == 1:
+						fill_with = round(fea_value_sat["average_positive"])
+					else:
+						fill_with = round(fea_value_sat["average_negitive"])
+				except:
+					pass
 			#print(new_data[i, fea_pos])	
 			data[i, fea_pos] = str(fill_with)
+
+	return data
+
+def filling_miss_with_experience(data, features, fea_pos):
+	experient_features_content = load_result("experience_features_info.csv")
+	experient_data_label = np.array(experient_features_content[0])
+	experient_features_data = np.array(experient_features_content[:])
+	now_feature_name = features[fea_pos]
+
+	which_row = np.where(experient_features_data[:, 0] == now_feature_name)[0][0]
+	which_col = np.where(experient_data_label == "average|most_presntS")
+
+	fill_with = experient_features_data[which_row, which_col]
+	for i in range(len(data)):
+		if not data[i, fea_pos] or data[i, fea_pos] == "不详":
+			data[i, fea_pos] = fill_with
 	return data
 
 # input:
@@ -198,16 +253,19 @@ def filling_miss(data, fea_pos, label, fea_value_sat, delete_fea,missing_num, th
 #	delete_feas_list: a default para contain the name of features you want to remove
 # result:
 #	deleted_features: a list contain the deleted features` index
-def delete_features(data, features, delete_fea_pos = " ", delete_feas_list = " "):
-	if not delete_fea_pos == " ":
+def delete_features(data, features, delete_fea_pos=[], delete_feas_list=[]):
+	if not delete_fea_pos == []:
 		deleted_features = [features[i] for i in delete_fea_pos]
 
-	if not delete_feas_list == " ":
+	if not delete_feas_list == []:
 		deleted_features = delete_feas_list
 		delete_fea_pos = list()
 		for f in delete_feas_list:
-			fea_pos = np.where(features == f)[0][0]
-			delete_fea_pos.append(fea_pos)
+			try:
+				fea_pos = np.where(features == f)[0][0]
+				delete_fea_pos.append(fea_pos)
+			except:
+				pass
 
 
 	data = np.delete(data, delete_fea_pos, axis = 1)
@@ -287,3 +345,16 @@ def delete_no_discrimination_features(data, features, index_entroy, lower_number
 	return data, features, deleted_features, delete_fea_entroy
 
 
+# input:
+#	features: the features from outside
+#	known_features: the features you want to know the index in features
+def get_known_features_index(features, known_features):
+
+	contain_respond_features_index = list()
+	for i in range(len(known_features)):
+		try:
+			finded_index = np.where( features == known_features[i])[0][0]
+			contain_respond_features_index.append(finded_index)
+		except:
+			pass
+	return contain_respond_features_index

@@ -13,6 +13,7 @@ import re
 from collections import OrderedDict
 import numpy as np
 
+import chardet
 
 class InfoDict(OrderedDict):
 	def __missing__(self, key):
@@ -25,8 +26,16 @@ def load_data(file_name, \
 	path = os.getcwd()
 
 	data_file_path = os.path.join(path, data_dir, data_style, file_name)
+	code_style = "utf-8"
+#UnicodeDecodeError
 	if os.path.exists(data_file_path):
-		with open(data_file_path, newline='', encoding='gbk') as csv_file:
+		try:
+			a = open(data_file_path, newline='', encoding=code_style)
+			a.read()
+		except:
+			code_style = "gbk"
+		
+		with open(data_file_path, newline='', encoding=code_style) as csv_file:
 			csv_reader = csv.reader(csv_file)
 			lines = [line for line in csv_reader]
 
@@ -36,6 +45,7 @@ def load_data(file_name, \
 		original_data = lines
 		return np.array(features), np.array(data), np.array(original_data)
 
+	print("file: " + data_file_path + "not existed")
 	return None
 
 def data_info(original_data, data_label = "forTrain"):

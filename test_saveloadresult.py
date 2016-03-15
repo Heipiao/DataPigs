@@ -10,7 +10,7 @@
 import numpy as np
 import csv
 import os
-from save_load_result import save_result, load_result
+from save_load_result import save_result, load_result, load_all_deleted_features_during_train
 
 
 # data = np.array([['E','F','C',4,5], [6,7,'D','9',6], [2,3,'C',5,6], [3,8,'D',3,3], [2,2,'',5,6]])
@@ -19,27 +19,29 @@ from save_load_result import save_result, load_result
 
 # save_result(data, "firstTry.csv")
 
-my_data = ['asdf', 'sdf', 'asdf', '1', '6']
-ll = dict()
-ll["ok"] = 5
-ll["okokok"] = 6
-my_data.append(ll)
+# my_data = ['asdf', 'sdf', 'asdf', '1', '6']
+# ll = dict()
+# ll["ok"] = 5
+# ll["okokok"] = 6
+# my_data.append(ll)
 
-contents = load_result("data_after_delete_no_discrimination_features.csv")
-features = np.array(contents[0])
-print(features)
+# contents = load_result("data_after_delete_no_discrimination_features.csv")
+# features = np.array(contents[0])
+# print(features)
 
 
-fixed_str_features = np.array(load_result("str_features.csv")[0])
-print(fixed_str_features.shape)
-print(fixed_str_features)
-indexs = list()
+# fixed_str_features = np.array(load_result("str_features.csv")[0])
+# print(fixed_str_features.shape)
+# print(fixed_str_features)
+# indexs = list()
 
-for i in range(len(fixed_str_features)):
-	try:
-		finded = np.where(features == fixed_str_features[i])[0][0]
-		indexs.append(finded)
-	except:
-		pass
+# for i in range(len(fixed_str_features)):
+# 	try:
+# 		finded = np.where(features == fixed_str_features[i])[0][0]
+# 		indexs.append(finded)
+# 	except:
+# 		pass
 
-print(indexs)
+# print(indexs)
+all_deleted_features = np.array(load_all_deleted_features_during_train())
+print(all_deleted_features.shape)

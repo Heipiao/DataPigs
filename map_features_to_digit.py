@@ -7,18 +7,24 @@
 #
 # @Description: used the features to digit value for easy to solve in the future
 
+FEATURES_MAP_INFO_FILE_NAME = "digit_remain_Str_features_map_infos.pickle"
+SAVE_DIR = "resultData/"
+
 from save_load_result import save_result, load_result
 from solve_data import feature_value_class, FeatureInData, \
 						delete_features
 import numpy as np
 from collections import OrderedDict
 from solve_data import get_known_features_index
+
+
 # replace the features with the original_data
 # input:
 #	data: the data you want to replaced
 #	replace_features: a list contain the features you want to replace
-def replace_with_original(data, features, replace_features):
-	original_contents = load_result("extractedTarget_originalData.csv")
+def replace_with_original(data, features, replace_features, \
+						original_name = "withoutLabel_originalData.csv"):
+	original_contents = load_result(original_name, dir_name = SAVE_DIR)
 	original_features = np.array(original_contents[0])
 	original_data = np.array(original_contents[1:])
 
@@ -29,6 +35,7 @@ def replace_with_original(data, features, replace_features):
 			data[:, index] = original_data[:, original_index]
 		except:
 			print(str(fea) + "may not existed in input features")
+			continue
 	return data
 # so digit the city name to value 
 #	the basis idea is according to the cei record of each cities:
@@ -42,7 +49,7 @@ BETTER_CITY = 1
 GREAT_CITY = 2
 NORMAL_CITY = 3
 BAD_CITY = 4
-NO_INFO = -10
+NO_INFO = -1
 def create_city_map_basis(cei_data, cei_features):
 	city_index = np.where( cei_features == "城市名称")[0][0]
 	score_index = np.where( cei_features == "分值")[0][0]
@@ -75,7 +82,7 @@ BETTER_PROVINCE = 1
 GREAT_PROVINCE = 2
 NORMAL_PROVINCE = 3
 BAD_PROVINCE = 4
-NO_INFO = -10
+NO_INFO = -1
 def create_province_map_basis(provs_data, provs_features):
 	province_index = np.where( provs_features == "省份名")[0][0]
 	income_index = np.where( provs_features == "可支配收入")[0][0]
@@ -106,7 +113,7 @@ def create_phone_map_basis():
 	phone_map_basis["中国移动 "] = 1
 	phone_map_basis["中国电信 "] = 1
 	phone_map_basis["中国联通 "] = 1
-	phone_map_basis["不详 "] = -10
+	phone_map_basis["不详 "] = -1
 
 	return phone_map_basis
 # 未婚 初婚 已婚 离婚 再婚
@@ -117,7 +124,7 @@ def create_marrage_map_basis():
 	marrage_map_basis["已婚 "] = 2
 	marrage_map_basis["离婚 "] = 3
 	marrage_map_basis["再婚 "] = 4
-	marrage_map_basis["不详 "] = -10
+	marrage_map_basis["不详 "] = -1
 	marrage_map_basis["D "] = 5
 	return marrage_map_basis
 
@@ -185,10 +192,13 @@ def map_residence(data, features, map_features):
 
 	for f in map_features:
 		#print(f)
-		fea_pos = np.where(features == f)[0][0]
-		#print(fea_pos)
-		map_result = np.array(list(map(map_resdent, data[:, fea_pos])))
-		digited_data[:, fea_pos] = map_result
+		try:
+			fea_pos = np.where(features == f)[0][0]
+			#print(fea_pos)
+			map_result = np.array(list(map(map_resdent, data[:, fea_pos])))
+			digited_data[:, fea_pos] = map_result
+		except:
+			pass
 	return digited_data
 			
 # as we can see : the city information in features is :
@@ -206,8 +216,11 @@ def use_map_basis_to_digit(data, features, map_basis, map_features):
 		# we get the first match
 		# PLease note: the 'UserInfo_4' is repeated in the features!!!!
 		#	instead we just get the first one
-		finded_index = np.where( features == map_features[i])[0][0]
-		contain_respond_features_index.append(finded_index)
+		try:
+			finded_index = np.where( features == map_features[i])[0][0]
+			contain_respond_features_index.append(finded_index)
+		except:
+			pass
 
 	def map_to(x):
 		for k in map_basis.keys():
@@ -235,7 +248,13 @@ def map_str_feature_to_value(data, fea_pos, fea_value_sat):
 			map_flag += 1
 
 	for i in range(len(data)):
-		data[i, fea_pos] = map_info[data[i, fea_pos]]
+		try:
+			data[i, fea_pos] = map_info[data[i, fea_pos]]
+		except:
+			print(fea_value_sat)
+			print("fea_pos", fea_pos)
+			print(data[i, fea_pos])
+			print(map_info)
 
 	return data, map_info
 
@@ -248,7 +267,11 @@ def convert_to_numerical(data, features):
 	# conver the digit number str to number
 	for i in range(row):
 		for j in range(num_col):
-			new_data[i, j] = int(float(data[i, j]))
+			try:
+				new_data[i, j] = int(float(data[i, j]))
+			except:
+				print(i, j)
+				print(features[j])
 
 	return new_data
 
@@ -271,28 +294,87 @@ def convert_to_numerical(data, features):
 	# save_result(np.array(features_map_info), "features_map_infos.csv", dir_name = "resultData/features_map")
 # input:
 #	- no_map_features: contain the name of features you do not want to digit 
-def map_str_to_digit(data, features, no_map_features, label = " "):
+def map_str_to_digit(data, features, no_map_features, only_map_features = " ", label = " "):
 	no_map_features_index = get_known_features_index(features, no_map_features)
-	features_map_info = list()
+	features_map_info = dict()
 
 	fixed_str_features = np.array(load_result("str_features.csv"))[0]
 	fixed_str_features_index = get_known_features_index(features, fixed_str_features)
 
-
+	only_map_features_index = range(len(features))
+	if not only_map_features == " ":
+		only_map_features_index = get_known_features_index(features, only_map_features)
 	for fea_pos in range(1, len(features)):
-		if not fea_pos in no_map_features_index:
+		if not fea_pos in no_map_features_index and fea_pos in only_map_features_index:
 			map_info = OrderedDict()
-			feature_map_info = OrderedDict()
+			#feature_map_info = OrderedDict()
 			fea_val_cla = feature_value_class(data, fea_pos, label, fixed_str_features_index)
 			# if this feature is a string value, just convert it to value
 			if fea_val_cla["str_feature"]:
+
 				data, map_info = map_str_feature_to_value(data, fea_pos, fea_val_cla)
-				feature_map_info[features[fea_pos]] = map_info
-				features_map_info.append([feature_map_info])
+				features_map_info[features[fea_pos]] = map_info
+				#features_map_info[].append([feature_map_info])
 
-	digit_data = convert_to_numerical(data, features)
-	return digit_data, features_map_info
+	digited_data = convert_to_numerical(data, features)
+	return digited_data, features_map_info
 
+
+# we should know sometimes, the "ListingInfo" may be reverse
+# we need 2014/2/21, instead we always get 21/2/2014
+def reverse_date(data, fea_pos):
+	for i in range(len(data)):
+		list_date = data[i, fea_pos]
+		list_date_split = list_date.split('/')
+		list_date_split.reverse()
+		normal_date = "/".join(list_date_split)
+		data[i, fea_pos] = normal_date
+	return data
+
+# as we can see, in most cases the fucntion below is just the same as the function above
+#	instead the function below is aim to use the existed map style to map the features
+#	and the map style is created by the function map_str_to_digit
+# maybe we should combine these two function, instead this will misxture the function
+#	so i write a only function to solve the pro --> using existing map style to map the
+#	features
+# yes! the meaning of parameters in this function is the same as ..above
+def map_str_to_digit_with_experience(data, features, digited_special_str_features, \
+									contain_special_features):
+	map_experience = load_result(FEATURES_MAP_INFO_FILE_NAME, \
+								dir_name = "resultData/features_map")
+	print(map_experience)
+	fixed_str_features = np.array(load_result("str_features.csv"))[0]
+	fixed_str_features_index = get_known_features_index(features, fixed_str_features)
+	digited_special_str_features_index = get_known_features_index(features, \
+												digited_special_str_features)
+	contain_special_features_index = get_known_features_index(features, \
+												contain_special_features)
+	remember = list()
+	for fea_pos in range(1, len(features)):
+		# str style features + str .. but not digited + the str we want to digit
+		if fea_pos in fixed_str_features_index and \
+			fea_pos not in digited_special_str_features_index and \
+			fea_pos in contain_special_features_index:
+			# the ListingInfo may be reverse !!!
+			if features[fea_pos] == "ListingInfo" and int(data[0, fea_pos].split("/")[0]) < 1000:
+				data = reverse_date(data, fea_pos)
+			if features[fea_pos] in map_experience.keys():
+				for i in range(len(data)):
+					try:
+						data[i, fea_pos] = map_experience[features[fea_pos]][data[i, fea_pos]]
+					except:
+						if i < 50:
+							print(features[fea_pos])
+							print(map_experience[features[fea_pos]])
+							print(map_experience[features[fea_pos]][data[i, fea_pos]])
+						remember.append(i) # this is a error value
+	#print(remember)			
+	data = np.delete(data, remember, 0)
+	digited_data = convert_to_numerical(data, features)
+	return digited_data
+	# print(map_experience)
+	# print(map_experience.shape)
+	# print(map_experience[0])
 
 
 
@@ -367,8 +449,66 @@ def digit_resident_features(data, features, resident_features, use_original_feat
 
 	return digited_residence_data
 
+def digit_WeblogInfo_2(value):
+	if value >= 3:
+		return 3
+	return value
+
+def digit_WeblogInfo_5(value):
+	if value <= 5:
+		return 0
+	elif value <= 10:
+		return 1
+	elif value <= 20:
+		return 2
+	else:
+		return 3
+
+def digit_WeblogInfo_8(value):
+	if value <= 5:
+		return 0
+	elif value <= 10:
+		return 1
+	elif value <= 20:
+		return 2
+	else:
+		return 3
+
+def digit_userInfo_18(value):
+	if value <=30:
+		return 0
+	elif value <= 40:	
+		return 1
+	else:
+		return 2
+def digit_WeblogInfo_24(value):
+	if value > 5:
+		return 8
+	return value
+
+def digit_WeblogInfo_27(value):
+	if value > 4:
+		return 6
+	return value
+def digit_WeblogInfo_30(value):
+	if value > 3:
+		return 3
+	return value
+def digit_WeblogInfo_33(value):
+	if value > 5:
+		return 8
+	return value
+def digit_WeblogInfo_36(value):
+	if value > 5:
+		return 6
+	return value
+def digit_WeblogInfo_39(value):
+	if value > 3:
+		return 3
+	return value
 
 if __name__ == '__main__':
+	pass
 	###################### used to digit city features ##################################
 	########### features: UserInfo_2", "UserInfo_4", "UserInfo_7", "UserInfo_19"
 	# cei_record_content = load_result("2013中国直辖市 省会城市和计划单列市排名榜.csv", dir_name = "material_data")
@@ -491,13 +631,13 @@ if __name__ == '__main__':
 	# save_result(np.array(features_map_info), "solve_specialStr_features_map_infos.csv", dir_name = "resultData/features_map")
 	
 	################# after all this, save the features info to the file ##########
-	contents = load_result("after_solve_specialStr_digited_data.csv")
-	features = np.array(contents[0])
-	data = np.array(contents[1:])
+	# contents = load_result("after_solve_specialStr_digited_data.csv")
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
 
-	label_lines = np.array(load_result("train_label_original.csv"))
+	# label_lines = np.array(load_result("train_label_original.csv"))
 
-	from save_load_result import convert_to_float, save_features_info
-	label = convert_to_float(label_lines)
+	# from save_load_result import convert_to_float, save_features_info
+	# label = convert_to_float(label_lines)
 
-	save_features_info(data, features, label, "after_solve_specialStr_features_infos.csv")
+	# save_features_info(data, features, label, "after_solve_specialStr_features_infos.csv")

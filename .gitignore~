@@ -3,3 +3,10 @@ __pycache__/
 resultData/
 material_data/
 test_test/
+view_data_area/
+test*
+*.png
+*.pickle
+*.zip
+*.csv
+*.xlsx

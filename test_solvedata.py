@@ -7,22 +7,52 @@
 #
 # @Description: 
 import numpy as np
-from functools import reduce
+# from functools import reduce
 
-from solve_data import calculate_feature_entroy, feature_value_class, FeatureInData, \
-						sort_features_with_entroy, delete_features
-from save_load_result import save_features_info, write_to_deleted_features_area, \
-							load_result
+# from solve_data import calculate_feature_entroy, feature_value_class, FeatureInData, \
+# 						sort_features_with_entroy, delete_features, calculate_feature_entroy_new
+# from save_load_result import save_features_info, write_to_deleted_features_area, \
+# 							load_result
 
-data = np.array([[1,3,2,4,5],
-				[1,4,2,5,3],
-				[2,4,2,5,3],
-				[3,4,2,5,1],
-				[1,3,2,4,5]])
-features = np.array([1, 2, 3, 4, 5])
+# data = np.array([[1,3,2,4,5],
+# 				[1,4,2,5,3],
+# 				[2,4,2,5,3],
+# 				[3,4,2,5,1],
+# 				[1,3,2,4,5]])
+# features = np.array([1, 2, 3, 4, 5])
+# label = " "
 
-print(data)
 
+# fea_info = feature_value_class(data, 3, label)
+# print(calculate_feature_entroy_new(fea_info, len(data)))
+
+
+# from math import log
+# log2 = lambda x : log(x) / log(2)
+# v1 = log2(5/2) * (2/5)
+# print(v1)
+# v2 = log2(5/3) * (3/5)
+# print(v2)
+
+# print(v1 + v2)
+
+# print(log2(2))
+
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+dic = {1:3.4, 6:5.7, 5:2.5, 2:4.4, 7:1.2, 3:0, 4:1.5}
+x = np.array(list(dic.keys()))
+y = np.array(list(dic.values()))
+print(x)
+print(y)
+
+plt.scatter(x, y)
+plt.xlabel("index of features(1-->total)")
+plt.ylabel("measure for each")
+
+plt.savefig("test_show.png")
+plt.close()
 # features = list(features)
 # print(features)
 # print(features.shape)
@@ -31,7 +61,7 @@ print(data)
 # 				[1],
 # 				[0],
 # 				[1]])
-label = " "
+
 # adf = list([1, 2])
 # asdf = list([4, 5])
 # data, features = delete_features(data, features, adf, asdf)
@@ -44,17 +74,17 @@ label = " "
 # 		print(v)
 #save_features_info(data, features, label, "test_save_featuers_info.csv")
 
-features = np.array(["a", "b", "c", "d", "e"])
-write_to_deleted_features_area(features)#, re_write = True)
+# features = np.array(["a", "b", "c", "d", "e"])
+# write_to_deleted_features_area(features)#, re_write = True)
 
-ff = load_result("all_deleted_features.csv")
-def iter_extend(x, y):
-	return x.extend(y)
-print(ff)
-print(type(ff))
-a = np.array(ff)
+# ff = load_result("all_deleted_features.csv")
+# def iter_extend(x, y):
+# 	return x.extend(y)
+# print(ff)
+# print(type(ff))
+# a = np.array(ff)
 
-print(a.reshape((a.size, )))
+# print(a.reshape((a.size, )))
 #print(np.array(ff))
 # print(features)
 # kn = np.array(["c", "d"])

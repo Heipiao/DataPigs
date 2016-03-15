@@ -33,6 +33,7 @@ def load_data(file_name, \
 			a = open(data_file_path, newline='', encoding=code_style)
 			a.read()
 		except:
+			print("can not open with utf-8")
 			code_style = "gbk"
 		
 		with open(data_file_path, newline='', encoding=code_style) as csv_file:
@@ -100,3 +101,4 @@ def extract_target(features, data):
 	label = np.array(list(map(float, label[:, 0]))).reshape(len(label), 1)
 
 	return not_contain_target_fea, not_contain_target_data, label
+

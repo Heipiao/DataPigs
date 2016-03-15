@@ -19,23 +19,34 @@ DIR_NAME = "resultData"
 
 from solve_data import get_known_features_index
 import os
+import re
 import csv
 import collections
 import numpy as np
+import pickle
 # all the input should be array 
 # save the data as csv in SAVE_LOAD_AREA/file_name
-def save_result(data, file_name, features = 10, dir_name = DIR_NAME):
+def save_result(data, file_name, features = 10, style = "w",dir_name = DIR_NAME):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
-	with open(file_path, "w", newline='') as csv_file:
-		spamwriter = csv.writer(csv_file)
-		if isinstance(features, collections.Iterable):
-			spamwriter.writerow(features)
-		if data.ndim == 1:
-			spamwriter.writerow(data)
-		else:	
-			for i in range(len(data)):
-				spamwriter.writerow(data[i])
+	pickle_pattern = re.compile(r".*\.pickle$")
+	# in order to save like this, you should named the file like: ****.pickle
+	if pickle_pattern.search(file_name):
+		with open(file_path, "wb") as pickle_f:
+			pickle.dump(data, pickle_f)
+	else:
+		with open(file_path, style, newline='') as csv_file:
+			spamwriter = csv.writer(csv_file)
+			if isinstance(features, collections.Iterable):
+				spamwriter.writerow(features)
+			try:
+				if data.ndim == 1:
+					spamwriter.writerow(data)
+				else:	
+					for i in range(len(data)):
+						spamwriter.writerow(data[i])
+			except:
+				spamwriter.writerow(data)
 
 # save the result of function called 'feature_value_class' definited in solve_data.py
 #	into the file
@@ -52,6 +63,7 @@ def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	first_line = np.array(['features_name', 'str_feature', \
+						'num_values', \
 						'average|most_presentS',
 						'postitive(average|most_present)', \
 						'negitive(average|most_present)', \
@@ -71,10 +83,11 @@ def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
 
 	for fea_pos in range(1, len(features)):
 		feature_info = list()
-		feature_info.append(features[fea_pos])	
-		fea_val_cla = feature_value_class(data, fea_pos, label, fixed_str_features_index = indexs)
+		feature_info.append(features[fea_pos])
 
+		fea_val_cla = feature_value_class(data, fea_pos, label, fixed_str_features_index = indexs)
 		feature_info.append(fea_val_cla["str_feature"])
+		feature_info.append(fea_val_cla["num_of_value"])
 		if fea_val_cla["str_feature"]:
 			feature_info.append(fea_val_cla["most_presentS"])
 			try:
@@ -128,13 +141,21 @@ def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
 	# label_lines = np.array(load_result("train_label_original.csv"))
 	# from save_load_result import convert_to_float
 	# label = convert_to_float(label_lines)
+	# code_style = "utf-8"
 def load_result(file_name, dir_name = DIR_NAME):
 	data_file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	if os.path.exists(data_file_path):
-		with open(data_file_path, newline='') as csv_file:
-			csv_reader = csv.reader(csv_file)
-			lines = [line for line in csv_reader]
-			return lines
+		pickle_pattern = re.compile(r".*\.pickle$")
+		if pickle_pattern.search(file_name):
+			print("it is a pickle")
+			with open(data_file_path, "rb") as pickle_f:
+				data = pickle.load(pickle_f)
+
+		else:
+			with open(data_file_path, newline='') as csv_file:
+				csv_reader = csv.reader(csv_file)
+				data = [line for line in csv_reader]
+		return data
 	else:
 		print("No such file !!!")
 # note: if you want to get the label data as a float type please call this function
@@ -160,9 +181,26 @@ def write_to_deleted_features_area(features, file_name = "all_deleted_features.c
 						dir_name = DIR_NAME, re_write = False):
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	style = "a+"
-	if re_write: 
+	if re_write:
 		style = "w"
 	with open(file_path, style, newline='') as csv_file:
 		spamwriter = csv.writer(csv_file)
 		spamwriter.writerow(features)
 
+
+def load_all_deleted_features_during_train(deleted_features_file_label = "deleted_features", \
+											find_dir = "resultData/"):
+	find_pattern = re.compile(r"^"+ deleted_features_file_label + ".*\.csv$")
+	file_path_basis = os.path.join(os.getcwd(), find_dir)
+	all_deleted_features = list()
+	for file in os.listdir(file_path_basis):
+		file_path = os.path.join(file_path_basis, file)
+		if os.path.isfile(file_path):
+			if find_pattern.search(file):
+				deleted_features = load_result(file, dir_name = find_dir)
+				# print(deleted_features[0])
+				all_deleted_features.extend(deleted_features[0])
+				# print("list: ***********")
+				# print(deleted_features)
+	#print(all_deleted_features)
+	return all_deleted_features

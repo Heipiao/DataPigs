@@ -27,7 +27,7 @@ import csv
 	# 0.4-0.6 中等程度相关
 	# 0.2-0.4 弱相关
 	# 0.0-0.2 极弱相关或无相关
-def correlation_between_properties(data, featuers):
+def correlation_between_properties(data, features):
 	fixed_str_features = np.array(load_result("str_features.csv"))[0]
 	indexs = get_known_features_index(features, fixed_str_features)
 
@@ -39,25 +39,26 @@ def correlation_between_properties(data, featuers):
 	title.append("pval")
 	save_result(title, "pearsonr_spearmanr_results.csv")
 	save_result(title, "pearsonr_spearmanr_Strong_correlation.csv")
-	for fea_pos in range(1, len(features)):
+	for fea_pos in range(len(features)):
 		for fea_pos_add in range(fea_pos + 1, len(features)):
 			info_result = list()
 			info_result.append(features[fea_pos])
 			info_result.append(features[fea_pos_add])
 			a1 = data[:, fea_pos]
 			a2 = data[:, fea_pos_add]
+			# they are all not str style features
 			if fea_pos not in indexs and fea_pos_add not in indexs:
 				info_result.append("pearsonr")
 				cor, pval = stats.pearsonr(a1, a2)
-			else:
+			else: # one of them or all of them are str style features
 				info_result.append("spearmanr")
 				cor, pval = stats.spearmanr(a1, a2)
 			cor = round(cor, 3)
 			info_result.append(cor)
 			info_result.append(pval)
-			if abs(cor) >= 0.8:
+			if abs(cor) >= 0.2:
 				save_result(info_result, "pearsonr_spearmanr_results.csv", style = "a+")
-			if abs(cor) >= 0.9:
+			if abs(cor) >= 0.86:
 				save_result(info_result, "pearsonr_spearmanr_Strong_correlation.csv", \
 												style = "a+")
 			 
@@ -74,8 +75,8 @@ def according_properties_correlation_delete():
 
 	delete_features = [comp_fea2[i] for i in range(len(comp_fea2)) \
 						if comp_fea1[i] not in comp_fea2]
-	print(set(delete_features))
-	return np.array(delete_features)
+	#print(set(delete_features))
+	return np.array(list(set(delete_features)))
 
 '''
 scipy.stats.variation
@@ -86,7 +87,7 @@ from collections import OrderedDict
 def according_coefficient_variation_delete(data, features):
 	waiting_to_delete = np.array(load_result("complex_value_features.csv"))
 	waiting_to_delete = waiting_to_delete.reshape((waiting_to_delete.size,))
-	print(waiting_to_delete)
+	#print(waiting_to_delete)
 	indexs = get_known_features_index(features, waiting_to_delete)
 	coefficient_variation_info = OrderedDict()
 	for fea_pos in indexs:
@@ -115,18 +116,10 @@ def use_RandomForestRegressor_to_delete(data, features, label):
 	print(sorted(scores, reverse=True))
 
 
-def find_featuers_index(features_name, features):
-	fea_index = list()
-	for fea_pos in range(1, len(features)):
-		if features_name in features[fea_pos]:
-			fea_index.append(fea_pos)
-	return fea_index
 # i think that weu just delete a features as same name 
 #	for example: 
 #		input: needed_delete_featuers --> maybe just all the UserInfo_.. named features
 def use_PCA_to_delete(data, features, needed_delete_featuers):
-
-
 	stored_features = dict()
 	for fea in needed_delete_featuers:
 
@@ -197,26 +190,7 @@ def extract_data_by_features(data, features, needed_features):
 
 
 
-def count_missed_create_new_feature(data, features, key_word):
-	fea_index = find_featuers_index(key_word, features)
-	feature_name = key_word + "_missed_count"
-	new_add_feature = np.array([feature_name])
 
-	count_data = data[:, fea_index]
-
-
-	feature_data = np.ones((len(data), 1))
-	new_features = np.concatenate((features, new_add_feature))
-
-	for i in range(len(count_data)):
-		count_miss = 0
-		for fea in range(count_data.shape[1]):
-			if count_data[i, fea] == -1:
-				count_miss += 1
-		feature_data[i, 0] = count_miss
-	new_data = np.concatenate((data, feature_data), axis = 1)
-
-	return new_data, new_features
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -250,13 +224,29 @@ def use_forests_features_detect(data, features, label):
 
 if __name__ == '__main__':
 	#################### used to calculate the correlation between properties #########
-	# contents = load_result("after_Str_features_digited_data.csv")
-	# features = np.array(contents[0])
-	# data = np.array(contents[1:])
+	contents = load_result("data_after_delete_no_discrimination_features.csv")
+	features = np.array(contents[0])
+	data = np.array(contents[1:])
 
-	# from map_features_to_digit import convert_to_numerical
+	from map_features_to_digit import convert_to_numerical
+	from solve_data import delete_features
 
-	# data = convert_to_numerical(data, features)
+	data = convert_to_numerical(data, features)
+
+	data, features, deleted = delete_features(data, features, delete_feas_list=["Idx", "ListingInfo"])
+
+
+	correlation_between_properties(data, features)
+
+	delete_result = according_properties_correlation_delete()
+	save_result(delete_result, "deleted_features_with_strong_correlation.csv")
+
+	
+	data, features, deleted_features = delete_features(data, features, \
+	 													delete_feas_list = delete_result)
+	# print(deleted_features)
+	save_result(data, "data_after_delete_strong_correlation_features.csv", features)
+	print(data.shape)
 
 	###############3 used pca to delete #####################
 
@@ -266,30 +256,20 @@ if __name__ == '__main__':
 	# 				"ThirdParty_Info_Period6"]
 	# #print(features)
 	# # use_PCA_to_delete(data, features, features_style)
-	# correlation_between_properties(data, features)
 
-	# delete_result = according_properties_correlation_delete()
-	# # print(delete_result.shape)
-	# save_result(delete_result, "deleted_features_with_strong_correlation.csv")
-
-	# from solve_data import delete_features
-	# data, features, deleted_features = delete_features(data, features, \
-	#  													delete_feas_list = delete_result)
-	# # print(deleted_features)
-	# save_result(data, "after_delete_strong_correlation_features_data.csv", features)
 
 	#################### use forest to select features ###############
-	contents = load_result("after_add_new_features_data.csv")
-	features = np.array(contents[0])
-	data = np.array(contents[1:])
+	# contents = load_result("after_add_new_features_data.csv")
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
 
-	data = convert_to_numerical(data, features)
+	# data = convert_to_numerical(data, features)
 
-	label_lines = np.array(load_result("train_label_original.csv"))
-	print(label_lines.shape)
-	from save_load_result import convert_to_float
-	label = convert_to_float(label_lines)
-	use_forests_features_detect(data[:, -8:], features[-8:], label)
+	# label_lines = np.array(load_result("train_label_original.csv"))
+	# print(label_lines.shape)
+	# from save_load_result import convert_to_float
+	# label = convert_to_float(label_lines)
+	# use_forests_features_detect(data[:, -8:], features[-8:], label)
 
 
 	# ############### use coefficient_variation to delete features ###############

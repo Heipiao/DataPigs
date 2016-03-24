@@ -98,7 +98,7 @@ def extract_target(features, data):
 	not_contain_target_fea = features[is_contain == False]
 	not_contain_target_data = data[:, is_contain == False]
 
-	label = np.array(list(map(float, label[:, 0]))).reshape(len(label), 1)
+	label = np.array(list(map(int, label[:, 0]))).reshape(len(label), 1)
 
 	return not_contain_target_fea, not_contain_target_data, label
 

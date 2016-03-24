@@ -119,15 +119,73 @@ def create_phone_map_basis():
 # 未婚 初婚 已婚 离婚 再婚
 def create_marrage_map_basis():
 	marrage_map_basis = dict()
-	marrage_map_basis["未婚 "] = 0
-	marrage_map_basis["初婚 "] = 1
-	marrage_map_basis["已婚 "] = 2
+	marrage_map_basis["未婚 "] = 1
+	marrage_map_basis["初婚 "] = 2
+	marrage_map_basis["已婚 "] = 0
 	marrage_map_basis["离婚 "] = 3
 	marrage_map_basis["再婚 "] = 4
 	marrage_map_basis["不详 "] = -1
+	marrage_map_basis["-1 "] = -1
 	marrage_map_basis["D "] = 5
 	return marrage_map_basis
 
+# Z
+# AD
+# R
+# AP
+# AF
+# Y
+# X
+# W
+# K
+# AL
+# AJ
+# AE
+# Q
+# P
+# AH
+# 大学本科（简称“大学
+# M
+# AI
+# AC
+# 专科毕业
+# -1
+# AK
+# H
+# AB
+# O
+# G
+# D
+def create_education_level_map_basis():
+	education_level_map_basis = dict()
+	education_level_map_basis["Z "] = 0
+	education_level_map_basis["AD "] = 1
+	education_level_map_basis["R "] = 2
+	education_level_map_basis["AP "] = 3
+	education_level_map_basis["AF "] = 4
+	education_level_map_basis["Y "] = 5
+	education_level_map_basis["X "] = 6
+	education_level_map_basis["W "] = 7
+	education_level_map_basis["K "] = 8
+	education_level_map_basis["AL "] = 9
+	education_level_map_basis["AJ "] = 10
+	education_level_map_basis["AE "] = 11
+	education_level_map_basis["Q "] = 12
+	education_level_map_basis["P "] = 13
+	education_level_map_basis["AH "] = 14
+	education_level_map_basis["大学本科（简称“大学 "] = 15
+	education_level_map_basis["M "] = 16
+	education_level_map_basis["AI "] = 17
+	education_level_map_basis["AC "] = 18
+	education_level_map_basis["专科毕业 "] = 19
+	education_level_map_basis["-1 "] = 20
+	education_level_map_basis["AK "] = 21
+	education_level_map_basis["H "] = 22
+	education_level_map_basis["AB "] = 23
+	education_level_map_basis["O "] = 24
+	education_level_map_basis["G "] = 25
+	education_level_map_basis["D "] = 26
+	return education_level_map_basis
 ######## 
 ## I believe that the UserInfo_23 may be the residence for a person
 ## the more the residence is specific, the better
@@ -157,7 +215,7 @@ def map_residence(data, features, map_features):
 	import re
 	# 
 	pattern_bad = re.compile(r".*市.*|.*自治区.*")
-	# 0
+	# 2
 	pattern_normal = re.compile(r".*州.*|.*县.*|.*区.*|.*旗.*")
 	# 1
 	pattern_good1 = re.compile(r".*镇.*|.*市.*.*乡.*|.*市.*.*庄.*|.*村.*")
@@ -165,7 +223,7 @@ def map_residence(data, features, map_features):
 	pattern_good3 = re.compile(r".*省.*县.*乡.*|.*省.*县.*村.*|.*省.*县.*镇.*")
 
 	pattern_good5 = re.compile(r".*市.*区.*\d.*")
-	# 2
+	# 0
 	pattern_great1 = re.compile(r".*市.*区.*\d.*")
 	pattern_great = re.compile(r".*\d.*")
 	# 3 --> else
@@ -176,15 +234,15 @@ def map_residence(data, features, map_features):
 		map_result = 3
 		if pattern_bad.search(x):
 			if pattern_normal.search(x):
-				map_result = 0
+				map_result = 2
 				if pattern_good1.search(x) or pattern_good2.search(x):
 					map_result = 1
 					if pattern_great.search(x):
-						map_result = 2
+						map_result = 0
 		if pattern_good3.search(x):
 			map_result = 1
 		if pattern_great1.search(x):
-			map_result = 2
+			map_result = 0
 		if x == "D":
 			map_result = 4
 		#print(map_result)
@@ -237,17 +295,23 @@ def use_map_basis_to_digit(data, features, map_basis, map_features):
 
 # convert the string in data into int style
 #	I.e --> map the str into value
+# note: we will not convert -1
 def map_str_feature_to_value(data, fea_pos, fea_value_sat):
 	map_flag = 0
 	map_info = dict()
 	# make sure the style of map
 	for k, v in fea_value_sat.items():
 		if isinstance(v, FeatureInData):
-			# map the value k of this feature to map_flag
-			map_info[k] = map_flag
-			map_flag += 1
+			if k == -1:
+				map_info[k] = -1
+			else:
+				# map the value k of this feature to map_flag
+				map_info[k] = map_flag
+				map_flag += 1
 
 	for i in range(len(data)):
+		if data[i, fea_pos] == "-1" or data[i, fea_pos] == -1:
+			continue
 		try:
 			data[i, fea_pos] = map_info[data[i, fea_pos]]
 		except:
@@ -261,7 +325,10 @@ def map_str_feature_to_value(data, fea_pos, fea_value_sat):
 
 # the input should be a array style whose shape is (a, b)
 def convert_to_numerical(data, features):
+
+	#print(data.shape)
 	row, col = data.shape
+
 	new_data = np.ones(data.shape, dtype=np.int64)
 	num_col = len(features)
 	# conver the digit number str to number
@@ -342,9 +409,11 @@ def map_str_to_digit_with_experience(data, features, digited_special_str_feature
 									contain_special_features):
 	map_experience = load_result(FEATURES_MAP_INFO_FILE_NAME, \
 								dir_name = "resultData/features_map")
+
 	print(map_experience)
 	fixed_str_features = np.array(load_result("str_features.csv"))[0]
 	fixed_str_features_index = get_known_features_index(features, fixed_str_features)
+
 	digited_special_str_features_index = get_known_features_index(features, \
 												digited_special_str_features)
 	contain_special_features_index = get_known_features_index(features, \
@@ -360,6 +429,8 @@ def map_str_to_digit_with_experience(data, features, digited_special_str_feature
 				data = reverse_date(data, fea_pos)
 			if features[fea_pos] in map_experience.keys():
 				for i in range(len(data)):
+					if data[i, fea_pos] == "-1":
+						continue
 					try:
 						data[i, fea_pos] = map_experience[features[fea_pos]][data[i, fea_pos]]
 					except:
@@ -440,6 +511,12 @@ def digit_marry_features(data, features, marry_features, use_original_features =
 
 
 	return digited_marrage_data
+
+def digit_education_level_features(data, features, education_level_feature):
+	EL_map_basis = create_education_level_map_basis()
+	digited_EL_data = use_map_basis_to_digit(data, features, EL_map_basis, education_level_feature)
+
+	return digited_EL_data
 
 def digit_resident_features(data, features, resident_features, use_original_features = False):
 

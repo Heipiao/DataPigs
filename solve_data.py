@@ -196,12 +196,12 @@ def label_statistics(label):
 #	- label: the label of data 2-dims (a, b)
 #	- fea_value_sat: result of function feature_value_class
 # ?? how to use this funcion? --> Please see the main.py
-def replace_miss_with_specialV(data, fea_pos, fea_value_sat, label,delete_fea, missing_num, threshold = 29000):
+def replace_miss_with_specialV(data, fea_pos, fea_value_sat, label,delete_fea_index, missing_num, threshold = 20000):
 	try:
 		l = label[0, 0]
-		if fea_value_sat["-1"]._present_num >= threshold:
-			delete_fea.append(fea_pos)
-			missing_num.append(fea_value_sat["-1"]._present_num)
+		if fea_value_sat[-1]._present_num >= threshold:
+			delete_fea_index.append(fea_pos)
+			missing_num.append(fea_value_sat[-1]._present_num)
 			return data
 	except:
 		pass
@@ -236,20 +236,6 @@ def replace_miss_with_specialV(data, fea_pos, fea_value_sat, label,delete_fea, m
 
 	return data
 
-def filling_miss_with_experience(data, features, fea_pos):
-	experient_features_content = load_result("experience_features_info.csv")
-	experient_data_label = np.array(experient_features_content[0])
-	experient_features_data = np.array(experient_features_content[:])
-	now_feature_name = features[fea_pos]
-
-	which_row = np.where(experient_features_data[:, 0] == now_feature_name)[0][0]
-	which_col = np.where(experient_data_label == "average|most_presntS")
-
-	fill_with = experient_features_data[which_row, which_col]
-	for i in range(len(data)):
-		if not data[i, fea_pos] or data[i, fea_pos] == "不详" or data[i, fea_pos] == "-1":
-			data[i, fea_pos] = fill_with
-	return data
 
 # input:
 #	delete_fea_pos: a list contain which features should be delete
@@ -257,25 +243,33 @@ def filling_miss_with_experience(data, features, fea_pos):
 # result:
 #	deleted_features: a list contain the deleted features` index
 def delete_features(data, features, delete_fea_pos=None, delete_feas_list=None):
-	deleted_features = []
+	to_delete_features = []
+
+	success_deleted_feas = list()
+
 	if not delete_fea_pos == None:
-		deleted_features = [features[i] for i in delete_fea_pos]
+		to_delete_features = [features[i] for i in delete_fea_pos]
+
+
 
 	if not delete_feas_list == None:
-		deleted_features = delete_feas_list
-		delete_fea_pos = list()
-		for f in delete_feas_list:
-			try:
-				fea_pos = np.where(features == f)[0][0]
-				delete_fea_pos.append(fea_pos)
-			except:
-				pass
+		to_delete_features = delete_feas_list
 
 
-	data = np.delete(data, delete_fea_pos, axis = 1)
-	features = np.delete(features, delete_fea_pos, axis = 0)
+	success_deleted_feas_index = list()
+	for f in to_delete_features:
+		try:
+			fea_pos = np.where(features == f)[0][0]
+			success_deleted_feas_index.append(fea_pos)
+			success_deleted_feas.append(features[fea_pos])
+		except:
+			pass
 
-	return data, features, deleted_features
+
+	data = np.delete(data, success_deleted_feas_index, axis = 1)
+	features = np.delete(features, success_deleted_feas_index, axis = 0)
+
+	return data, features, success_deleted_feas
 
 
 
@@ -320,22 +314,12 @@ def calculate_feature_entroy_new(fea_value_sat, total_instances_num):
 	if num_pos == 0 or num_neg == 0:
 		return 0
 
-
-
 	value_pre_entroy = calculate_feature_entroy(fea_value_sat)
 	threshold_pos_rat = 0.0733 # in the whole data set, the ratio of positive number
 
 	for k, v in fea_value_sat.items():
 		if isinstance(v, FeatureInData):
-			# pro_pre = float(v._present_num / total_instances_num)
-			#value_pre_entroy = value_pre_entroy - pro_pre * log2(pro_pre)
-
-			# this value contain too much instances and its useful
-			if (v._respond_positive_num / v._present_num) > threshold_pos_rat \
-				and v._present_num > (total_instances_num / fea_value_sat["num_of_value"]):
-				value_pre_entroy += 1# / fea_value_sat["num_of_value"]
-
-			if v._present_num > 20000 and (v._respond_positive_num / v._present_num) < threshold_pos_rat:
+			if v._present_num > 29000 and num_of_value < 4:
 				value_pre_entroy -= 4
 			
 
@@ -384,7 +368,7 @@ def delete_no_discrimination_features(data, features, index_entroy, lower_number
 				delete_fea_entroy.append(v)
 				number += 1
 		else:
-			if v <= 4:
+			if v <= 0:
 				delete_fea_index.append(k)
 				delete_fea_entroy.append(v)
 	# delete_fea_index = np.array(delete_fea_index)
@@ -411,49 +395,19 @@ def get_known_features_index(features, known_features):
 
 
 
-def fill_the_missing_after_all(data, fea_pos, fea_value_sat, label = None):
-
+def fill_the_missing(data, fea_pos, fea_value_sat, label = None):
 	# if label has: 
 	# use the average of the same label of missed instances to fill the miss
 	for i in range(len(data)):
 		if data[i, fea_pos] == -1:
 			# if this miss data is a string style
 			if fea_value_sat["str_feature"]:
-				fill_with = fea_value_sat["most_presentS"]
-				try:
-					if label[i, 0] == 1: # if this missed value instance`s label is 1
-						fill_with = fea_value_sat["most_presentS_positive"]
-					else:
-						fill_with = fea_value_sat["most_presentS_negitive"]
-				except:
-					pass		
+				fill_with = fea_value_sat["most_presentS"]	
 			else:		
 				fill_with = fea_value_sat["average"]
-				# fill the miss with average of same label, if label has
-				try:
-					if label[i, 0] == 1:
-						fill_with = round(fea_value_sat["average_positive"])
-					else:
-						fill_with = round(fea_value_sat["average_negitive"])
-				except:
-					pass
+				
 			data[i, fea_pos] = fill_with
 	return data
 # this function is aim to extract the instances with too many missing...
 #### want to use these person who have lots of missing information to
 #### create a module to description these person who are lack of information
-
-if __name__ == '__main__':
-	from save_load_result import convert_to_float, load_result
-	label_lines = np.array(load_result("train_label_original.csv"))
-	print(label_lines.shape)
-
-	label = convert_to_float(label_lines)
-	label_sta = label_statistics(label)
-	print(label_sta)
-	posi = label_sta["positive_num"]
-	negi = label_sta["negitive_num"]
-	threshold1 = round(posi / negi, 4)
-	threshold2 = round(posi / (posi + negi), 4)
-	print(threshold1) # 0.0791
-	print(threshold2) # 0.0733

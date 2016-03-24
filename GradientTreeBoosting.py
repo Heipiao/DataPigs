@@ -13,6 +13,7 @@ from map_features_to_digit import convert_to_numerical
 
 from sklearn.cross_validation import StratifiedKFold
 
+
 import numpy as np
 
 '''
@@ -26,11 +27,16 @@ shrinkage and subsampling should be used together
 A typical value of subsample is 0.5
 learning_rate <= 0.1
 '''
-
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, auc
 import matplotlib.pyplot as plt
 from scipy import interp
+
+
+
+def use_xgboost():
+	pass
+
 
 def prepare_data_for_using(data, label):
 	pass
@@ -39,7 +45,7 @@ def use_GRClassifier():
 	original_params = {"loss": 'exponential', "n_estimators": 1000, "max_leaf_nodes": 4, "max_depth": None, \
 						"min_samples_split": 5}
 
-	setting = {"learning_rate": 0.1, "subsample": 0.5}
+	setting = {"learning_rate": 0.05, "subsample": 0.5}
 	params = dict(original_params)
 	params.update(setting)
 
@@ -55,6 +61,8 @@ def calculate_draw_roc(classifier, data, features, label, cv_Flod, original_data
 
 	my_test = original_data[:400]
 	my_label = original_label[:400]
+
+	features_importance = dict()
 
 	for i, (train, test) in enumerate(cv_Flod):
 	    
@@ -79,9 +87,7 @@ def calculate_draw_roc(classifier, data, features, label, cv_Flod, original_data
 	    print("Feature ranking: ")
 	    for f in range(data.shape[1]):
 	    	print("%s. %d (%f)" % (features[indices[f]], indices[f], importances[indices[f]]))
-	    	if importances[indices[f]] < 0.0089:
-	    		save_result(features[indices[f]], "delete_by_GB.csv", style = "a+")
-
+	    	features_importance[features[indices[f]]] = importances[indices[f]]
 
 	test_probs = fitted_classifier.predict_proba(my_test)
 	test_fpr, test_tpr, test_thresholds = roc_curve(my_label, test_probs[:, 1])
@@ -104,16 +110,15 @@ def calculate_draw_roc(classifier, data, features, label, cv_Flod, original_data
 	plt.ylabel('True Positive Rate')
 	plt.title('Receiver operating characteristic example')
 	plt.legend(loc="lower right")
-	plt.savefig("ROC_GB_fill_miss.png")
+	plt.savefig("ROC_GB_user_all_solved_lr(0.05).png")
 
+	return features_importance
 
 
 if __name__ == '__main__':
-	contents = load_result("after_all_process_data.csv")
+	contents = load_result("data_after_features_processed.csv")
 	features = np.array(contents[0])
 	data = np.array(contents[1:])
-
-	data = convert_to_numerical(data, features)
 
 	label_lines = np.array(load_result("train_label_original.csv"))
 	#print(label_lines.shape)
@@ -122,11 +127,18 @@ if __name__ == '__main__':
 
 	label = label.reshape((label.size, ))
 
+	# from create_new_features import find_featuers_index
+	# features_name = "WeblogInfo"
+	# fea_indexs = find_featuers_index(features_name, features)
+	# print(fea_indexs)
+
+	# data = data[:, fea_indexs]
+	# features = features[fea_indexs]
+
 	data, features, deleted = delete_features(data, features, delete_feas_list=["Idx", "ListingInfo"])
-	#print(features)
-	print(data.shape)
-	print(features.shape)
+	data = convert_to_numerical(data, features)
 
 	classifier = use_GRClassifier()
-	cv_Flod = StratifiedKFold(label[1000:], n_folds=4) 
+	cv_Flod = StratifiedKFold(label[1000:], n_folds=3) 
 	calculate_draw_roc(classifier, data[1000:], features, label[1000:], cv_Flod, data, label)
+

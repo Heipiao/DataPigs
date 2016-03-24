@@ -13,19 +13,20 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
-from solve_data import feature_value_class, FeatureInData
+from solve_data import feature_value_class, FeatureInData, delete_features
 from save_load_result import load_result, get_known_features_index, save_result
 # view each feature`s value distributed
 def view_each_features(data, features):
+	data, features, deleted = delete_features(data, features, delete_feas_list=["Idx", "ListingInfo"])
 	str_style_features = np.array(load_result("str_features.csv")[0])
-	no_draw_features_index = get_known_features_index(features, str_style_features)
+	str_features_index = get_known_features_index(features, str_style_features)
 
 	x = range(len(data))
 
-	for fea_pos in range(1, len(features) - 1):
+	for fea_pos in range(len(features)):
 		feature_name = features[fea_pos]
 		# not draw the str style features
-		if fea_pos in no_draw_features_index:
+		if fea_pos in str_features_index:
 			file_path = "view_data_area/csj/" + "(str" + str(fea_pos) + ")" + feature_name +  ".png"
 			# print(fea_pos)
 			# print(features[fea_pos])
@@ -49,18 +50,18 @@ def view_each_features(data, features):
 
 
 def view_each_features_label(data, features, label):
-
+	data, features, deleted = delete_features(data, features, delete_feas_list=["Idx", "ListingInfo"])
 	str_style_features = np.array(load_result("str_features.csv")[0])
 	str_features_index = get_known_features_index(features, str_style_features)
 
 	new_label = label.reshape((label.size,))
 	x = range(len(data))
-	for fea_pos in range(1, len(features) - 1):
+	for fea_pos in range(len(features)):
 		feature_name = features[fea_pos]
 		if fea_pos in str_features_index:
-			file_path = "view_data_area/after_all/with_label_upper_mean/" + "(str" + str(fea_pos) + ")" + feature_name +  ".png"
+			file_path = "view_data_area/after_all/with_label_under_mean/" + "(str" + str(fea_pos) + ")" + feature_name +  ".png"
 		else:
-			file_path = "view_data_area/after_all/with_label_upper_mean/" + str(fea_pos) + ")" + feature_name +  ".png"
+			file_path = "view_data_area/after_all/with_label_under_mean/" + str(fea_pos) + ")" + feature_name +  ".png"
 		features_info = feature_value_class(data, fea_pos, label, str_features_index)
 		if features_info["num_of_value"] > 30:
 			save_result([features[fea_pos]], "complex_value_features.csv", style = "a+")
@@ -142,8 +143,8 @@ def view_each_features_label(data, features, label):
 				plt.annotate(round(pos_rat, 4), \
 						xy=(-4000,-1), \
 						xytext=(-4000,-1))
-			#plt.ylim(min_v - 10, fea_average * 2)
-			plt.ylim(fea_average - round(fea_average / 10), max_v + round(fea_average / 10))
+			plt.ylim(min_v - 10, fea_average * 2)
+			#plt.ylim(fea_average - round(fea_average / 10), max_v + round(fea_average / 10))
 		plt.savefig(file_path)
 		plt.close()
 
@@ -235,33 +236,88 @@ def view_feature_value_info(fea_respond_data, fea_info, saved_area, view_precise
 		if draw_upper_edge_index >= len(sorted_fea_data):
 			draw_upper_edge_index = len(sorted_fea_data)
 
+import re
 
+def view_tp_cv(type_info, sat_type, sat_name, saved_fig = "view_res.png"):
+	res = [v[sat_type][sat_name] for v in type_info.values()]
+	x = range(0, len(res))
+	plt.scatter(x, res, s = 10)
+
+	ave_res = [value for value in res if not value == 0]
+	plt.title("average all the data showed below: " + str(round(float(np.mean(ave_res)), 1)))
+	plt.savefig(saved_fig)
+	plt.close()
+
+
+def store_pic_with_class(pic_dir = "view_data_area/csj"):
+
+	def copy_to_dir(file, dir_name):
+		pass
+
+	pic_class = ["UserInfo", "Education_Info"]
+	dir_path = os.path.join(os.getcwd(), pic_dir)
+	find_pattern = re.compile(r".*\.png$")
+
+	for file in os.listdir(dir_path):
+		file_path = os.path.join(dir_path, file)
+		if os.path.isfile(file_path):
+			if find_pattern.search(file):
+				pass
+	return all_deleted_features	
+
+
+import shutil
+
+def store_thirdPart_info_by_class(pic_dir = "view_data_area/csj"):
+	dir_path = os.path.join(os.getcwd(), pic_dir)
+	find_pattern = re.compile(r".*\.png$")
+	for file in os.listdir(dir_path):
+		file_path = os.path.join(dir_path, file)
+		if os.path.isfile(file_path):
+			if find_pattern.search(file):
+				# just operate here, we can use store the png files departement
+				name = file.split("_")
+				tp_class = name[3].split(".")[0]
+				#######################################
+				saved_dir = os.path.join(dir_path, tp_class)
+				if not os.path.exists(saved_dir):
+					os.mkdir(saved_dir)
+
+				if os.path.isdir(saved_dir):
+					shutil.copy(file_path, saved_dir)
+
+	print("Copy Done")
 
 if __name__ == '__main__':
-	contents = load_result("after_add_new_features_data.csv")
-	features = np.array(contents[0])
-	data = np.array(contents[1:])
+	
+	# contents = load_result("data_of_ThirdPart.csv")
+	# features = np.array(contents[0])
+	# data = np.array(contents[1:])
 
-	label_lines = np.array(load_result("train_label_original.csv"))
-	from save_load_result import convert_to_float
-	label = convert_to_float(label_lines)
+	# label_lines = np.array(load_result("train_label_original.csv"))
+	# from save_load_result import convert_to_float
+	# label = convert_to_float(label_lines)
 
-	from map_features_to_digit import convert_to_numerical
+	# from map_features_to_digit import convert_to_numerical
 
-	data = convert_to_numerical(data, features)
+	# data = convert_to_numerical(data, features)
 	#view_each_features(data, features)
-	#print(np.where(data[:, 1] == -1))
-	view_each_features_label(data[:, 1:], features[1:], label)
+
+	store_thirdPart_info_by_class(pic_dir = "view_data_area/after_all/with_label_under_mean/")
 
 
-	# file_dir = "view_data_area/view_features_weight/"
-	# str_style_features = np.array(load_result("str_features.csv")[0])
-	# str_features_index = get_known_features_index(features, str_style_features)
+	# #print(np.where(data[:, 1] == -1))
+	#view_each_features_label(data, features, label)
 
-	# for fea_pos in range(1, len(features)):
-	# 	if fea_pos not in str_features_index:
-	# 		fea_info = feature_value_class(data, fea_pos, label, str_features_index)
-	# 		if fea_info["num_of_value"] > 30:
-	# 			os.mkdir(os.path.join(file_dir, features[fea_pos]))
-	# 			saved_area = os.path.join(file_dir, features[fea_pos])			
-	# 			view_feature_value_info(data[:, fea_pos], fea_info, saved_area)
+
+	# # file_dir = "view_data_area/view_features_weight/"
+	# # str_style_features = np.array(load_result("str_features.csv")[0])
+	# # str_features_index = get_known_features_index(features, str_style_features)
+
+	# # for fea_pos in range(1, len(features)):
+	# # 	if fea_pos not in str_features_index:
+	# # 		fea_info = feature_value_class(data, fea_pos, label, str_features_index)
+	# # 		if fea_info["num_of_value"] > 30:
+	# # 			os.mkdir(os.path.join(file_dir, features[fea_pos]))
+	# # 			saved_area = os.path.join(file_dir, features[fea_pos])			
+	# # 			view_feature_value_info(data[:, fea_pos], fea_info, saved_area)

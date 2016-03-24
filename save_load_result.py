@@ -15,8 +15,6 @@ with open('eggs.csv', 'w', newline='') as csvfile:
     spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
 '''
 
-DIR_NAME = "resultData"
-
 from solve_data import get_known_features_index
 import os
 import re
@@ -26,7 +24,7 @@ import numpy as np
 import pickle
 # all the input should be array 
 # save the data as csv in SAVE_LOAD_AREA/file_name
-def save_result(data, file_name, features = 10, style = "w",dir_name = DIR_NAME):
+def save_result(data, file_name, features = 10, style = "w",dir_name = "resultData"):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	pickle_pattern = re.compile(r".*\.pickle$")
@@ -59,7 +57,7 @@ def save_result(data, file_name, features = 10, style = "w",dir_name = DIR_NAME)
 #	- _present_num
 #	- _respond_positive_num
 #	- _respond_negitive_num
-def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
+def save_features_info(data, features, label, file_name, dir_name = "resultData"):
 
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	first_line = np.array(['features_name', 'str_feature', \
@@ -142,7 +140,7 @@ def save_features_info(data, features, label, file_name, dir_name = DIR_NAME):
 	# from save_load_result import convert_to_float
 	# label = convert_to_float(label_lines)
 	# code_style = "utf-8"
-def load_result(file_name, dir_name = DIR_NAME):
+def load_result(file_name, dir_name = "resultData"):
 	data_file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	if os.path.exists(data_file_path):
 		pickle_pattern = re.compile(r".*\.pickle$")
@@ -160,8 +158,8 @@ def load_result(file_name, dir_name = DIR_NAME):
 		print("No such file !!!")
 # note: if you want to get the label data as a float type please call this function
 #	-- the input: should be array types with size (row, 1)
-def convert_to_float(strf_array):
-	convert_result = np.array(list(map(float, strf_array[:, 0])))
+def convert_to_int(strf_array):
+	convert_result = np.array(list(map(int, strf_array[:, 0])))
 	convert_result = convert_result.reshape(len(convert_result), 1)
 	return convert_result
 
@@ -178,7 +176,7 @@ def convert_to_float(strf_array):
 #		convert_to_array = np.array(load_result("all_deleted_features.csv"))
 #		the_style_we_want = convert_to_array.shape((convert_to_array.size,))
 def write_to_deleted_features_area(features, file_name = "all_deleted_features.csv", \
-						dir_name = DIR_NAME, re_write = False):
+						dir_name = "resultData", re_write = False):
 	file_path = os.path.join(os.getcwd(), dir_name, file_name)
 	style = "a+"
 	if re_write:

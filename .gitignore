@@ -4,7 +4,14 @@ resultData/
 material_data/
 test_test/
 view_data_area/
+thirdPartyInfo/
+weblog_info/
+
 test*
+importance*
+web_*
+
+*.model
 *.png
 *.pickle
 *.zip

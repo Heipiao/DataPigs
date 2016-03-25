@@ -142,6 +142,7 @@ def save_features_info(data, features, label, file_name, dir_name = "resultData"
 	# code_style = "utf-8"
 def load_result(file_name, dir_name = "resultData"):
 	data_file_path = os.path.join(os.getcwd(), dir_name, file_name)
+	
 	if os.path.exists(data_file_path):
 		pickle_pattern = re.compile(r".*\.pickle$")
 		if pickle_pattern.search(file_name):

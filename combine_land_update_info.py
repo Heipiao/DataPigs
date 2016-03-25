@@ -11,23 +11,23 @@ import numpy as np
 
 from save_load_result import load_result, save_result
 from collections import OrderedDict
-DATA_DIR = "PPD-First-Round-Data/Training Set/"
-SAVE_DIR = "resultData"
+# DATA_DIR = "PPD-First-Round-Data/Training Set/"
+# SAVE_DIR = "resultData"
 
-#################### load the needed data ####################################
-log_info = np.array(load_result("PPD_LogInfo_3_1_Training_Set.csv", dir_name = DATA_DIR))
-log_info_features = log_info[0]
-log_info_data = log_info[1:]
+# #################### load the needed data ####################################
+# log_info = np.array(load_result("PPD_LogInfo_3_1_Training_Set.csv", dir_name = DATA_DIR))
+# log_info_features = log_info[0]
+# log_info_data = log_info[1:]
 
 
-update_info = np.array(load_result("PPD_Userupdate_Info_3_1_Training_Set.csv", dir_name = DATA_DIR))
-update_info_features = update_info[0]
-update_info_data = update_info[1:]
+# update_info = np.array(load_result("PPD_Userupdate_Info_3_1_Training_Set.csv", dir_name = DATA_DIR))
+# update_info_features = update_info[0]
+# update_info_data = update_info[1:]
 
-id_target = np.array(load_result("PPD_Training_Master_GBK_3_1_Training_Set.csv", dir_name = DATA_DIR))
+# id_target = np.array(load_result("PPD_Training_Master_GBK_3_1_Training_Set.csv", dir_name = DATA_DIR))
 
-features = id_target[0, [0, -2, -1]]
-data = id_target[1:, [0, -2, -1]]
+# features = id_target[0, [0, -2, -1]]
+# data = id_target[1:, [0, -2, -1]]
 # # print(features)
 # print(data)
 # print(log_info_features)
@@ -46,13 +46,29 @@ data = id_target[1:, [0, -2, -1]]
 #				--> "land_info" --> land_operate_code land_operate_style land_date
 #				--> "modify_info" --> modify_info modify_date
 #
-def combine_land_modify_infos(data, log_info_data, update_info_data):
+def combine_land_modify_infos(data, log_info_data, update_info_data, saved_dir = "resultData"):
+	for_train = False
+	# this is a data from test data
+	if data.shape[1] == 2:
+		for_train = True
+
 	all_id_info = OrderedDict()
 	for id_pos in range(len(data)):
 		id_name = data[id_pos, 0]
 		all_id_info[id_name] = OrderedDict()
-		all_id_info[id_name]["target"] = data[id_pos, 1]
-		all_id_info[id_name]["borrow_date"] = data[id_pos, 2]
+		if for_train:
+			all_id_info[id_name]["target"] = None
+		else:
+			all_id_info[id_name]["target"] = data[id_pos, 1]
+		splited_date = data[id_pos, -1].split("/")
+		# is the date`s style is 02/3/2014 
+		if int(splited_date[-1]) > int(splited_date[0]):
+			# convert it to 2014/3/02
+			t = splited_date[-1]
+			splited_date[-1] = splited_date[0]
+			splited_date[0] = t
+			data[id_pos, -1] = splited_date[0] + "/" + splited_date[1] + "/" + splited_date[-1]
+		all_id_info[id_name]["borrow_success_date"] = data[id_pos, -1]
 		# add the land info
 		all_id_info[id_name]["land_info"] = OrderedDict()
 		land_date = list()
@@ -80,7 +96,7 @@ def combine_land_modify_infos(data, log_info_data, update_info_data):
 
 		all_id_info[id_name]["modify_info"]["modify_things"] = modify_info
 		all_id_info[id_name]["modify_info"]["modify_date"] = modify_date
-	save_result(all_id_info, "all_id_info.pickle", dir_name = SAVE_DIR)
+	save_result(all_id_info, "all_id_info.pickle", dir_name = saved_dir)
 
 
 if __name__ == '__main__':

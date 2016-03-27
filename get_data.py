@@ -11,8 +11,11 @@ import os
 import csv
 import re
 from collections import OrderedDict
+import numpy as np
 
-class info_dict(OrderedDict):
+import chardet
+
+class InfoDict(OrderedDict):
 	def __missing__(self, key):
 		return 0
 # load the csv data
@@ -23,21 +26,32 @@ def load_data(file_name, \
 	path = os.getcwd()
 
 	data_file_path = os.path.join(path, data_dir, data_style, file_name)
+	code_style = "utf-8"
+#UnicodeDecodeError
 	if os.path.exists(data_file_path):
-		with open(data_file_path, newline='', encoding='gbk') as csv_file:
+		try:
+			a = open(data_file_path, newline='', encoding=code_style)
+			a.read()
+		except:
+			print("can not open with utf-8")
+			code_style = "gbk"
+		
+		with open(data_file_path, newline='', encoding=code_style) as csv_file:
 			csv_reader = csv.reader(csv_file)
 			lines = [line for line in csv_reader]
 
 		features = lines[0]
 		data = lines[1:]
-		original_data = lines
-		return features, data, original_data
 
+		original_data = lines
+		return np.array(features), np.array(data), np.array(original_data)
+
+	print("file: " + data_file_path + "not existed")
 	return None
 
 def data_info(original_data, data_label = "forTrain"):
 
-	info = info_dict()
+	info = InfoDict()
 	info["data_label"] = data_label
 	info["num_instances"] = len(original_data[1:])
 	info["num_features"] = len(original_data[0][1:]) # ignore the idx 
@@ -72,20 +86,19 @@ def print_instance_format(features, instance_data):
 	for i in range(len(features)):
 		print(features[i] + ": " + instance_data[i])
 
-if __name__ == '__main__':
-	train_master_feas, train_master_data, a = load_data("PPD_Training_Master_GBK_3_1_Training_Set.csv")
-	#train_master_feas, train_master_data, a = load_data("PPD_LogInfo_3_1_Training_Set.csv")
-	print("***********just view features and one data: ***********")
-	print(train_master_feas)
-	print(train_master_data[0])
+# the input data and features should have 'target'
+# then we will extract target from them and consist the data 
+#	in a new way 
+def extract_target(features, data):
+	if not 'target' in features:
+		return features, data, None
+	is_contain = features == "target"
 
-	print("*****print correspondence between features and data")
-	print_instance_format(train_master_feas, train_master_data[0])
+	label = data[:, is_contain]
+	not_contain_target_fea = features[is_contain == False]
+	not_contain_target_data = data[:, is_contain == False]
 
-	print("\n***** the info of the features *******")
-	info = data_info(a)
-	for k, v in info.items():
-		print(k, v)
+	label = np.array(list(map(int, label[:, 0]))).reshape(len(label), 1)
 
-	targets = [instance[-2] for instance in train_master_data ]
-	#rint(targets)
+	return not_contain_target_fea, not_contain_target_data, label
+
